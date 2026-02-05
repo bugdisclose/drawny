@@ -48,6 +48,11 @@
   /* GPU acceleration */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  /* Ensure canvas is visible and rendered */
+  visibility: visible;
+  opacity: 1;
+  /* Fix for mobile rendering */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Drawing layer canvas */

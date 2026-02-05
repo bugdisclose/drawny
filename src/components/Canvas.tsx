@@ -244,6 +244,19 @@ export default function Canvas({
         }
 
         console.log('[Canvas] Creating drawing engine...');
+        console.log('[Canvas] Canvas dimensions:', canvas.width, 'x', canvas.height);
+        console.log('[Canvas] Device pixel ratio:', window.devicePixelRatio);
+
+        // Ensure canvas has proper dimensions for high-DPI displays
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = CANVAS_CONFIG.width;
+        const displayHeight = CANVAS_CONFIG.height;
+
+        // Set canvas internal resolution for crisp rendering on mobile
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+
+        console.log('[Canvas] Set canvas size to:', canvas.width, 'x', canvas.height);
 
         const newEngine = new DrawingEngine({
             canvas: canvas,
@@ -648,7 +661,9 @@ export default function Canvas({
                 className={styles.canvas}
                 style={{
                     transform: `translate(${-viewportState.x}px, ${-viewportState.y}px) scale(${viewportState.zoom})`,
-                    transformOrigin: 'top left',
+                    transformOrigin: '0 0',
+                    WebkitTransform: `translate(${-viewportState.x}px, ${-viewportState.y}px) scale(${viewportState.zoom})`,
+                    WebkitTransformOrigin: '0 0',
                 }}
             />
 
