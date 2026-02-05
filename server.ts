@@ -12,8 +12,10 @@ const handler = app.getRequestHandler();
 app.prepare().then(() => {
     const httpServer = createServer(handler);
 
-    // Initialize Socket.io
-    initSocketServer(httpServer);
+    // Initialize Socket.io AFTER creating the server
+    // Socket.io will use default path /socket.io/
+    const io = initSocketServer(httpServer);
+    console.log('[Server] Socket.io initialized (default path)');
 
     httpServer.listen(port, () => {
         console.log(`> Ready on http://${hostname}:${port}`);

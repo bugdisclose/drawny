@@ -5,6 +5,7 @@ import styles from './CountdownTimer.module.css';
 
 interface CountdownTimerProps {
     resetIntervalHours?: number;
+    serverStartTime?: number | null;
 }
 
 interface TimeLeft {
@@ -13,37 +14,17 @@ interface TimeLeft {
     seconds: number;
 }
 
-export default function CountdownTimer({ resetIntervalHours = 24 }: CountdownTimerProps) {
+export default function CountdownTimer({ resetIntervalHours = 24, serverStartTime }: CountdownTimerProps) {
     const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [canvasStartTime, setCanvasStartTime] = useState<number | null>(null);
 
-    // Get or initialize canvas start time from localStorage
+    // Sync with server time - this is the ONLY source of truth
     useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const storedStartTime = localStorage.getItem('drawny_canvas_start_time');
-        const resetIntervalMs = resetIntervalHours * 60 * 60 * 1000;
-
-        if (storedStartTime) {
-            const startTime = parseInt(storedStartTime, 10);
-            const elapsed = Date.now() - startTime;
-
-            // Check if canvas should have reset
-            if (elapsed >= resetIntervalMs) {
-                // Start a new cycle
-                const newStartTime = Date.now();
-                localStorage.setItem('drawny_canvas_start_time', newStartTime.toString());
-                setCanvasStartTime(newStartTime);
-            } else {
-                setCanvasStartTime(startTime);
-            }
-        } else {
-            // First time - initialize start time
-            const newStartTime = Date.now();
-            localStorage.setItem('drawny_canvas_start_time', newStartTime.toString());
-            setCanvasStartTime(newStartTime);
+        if (serverStartTime) {
+            console.log('[Timer] Syncing with server time:', new Date(serverStartTime).toISOString());
+            setCanvasStartTime(serverStartTime);
         }
-    }, [resetIntervalHours]);
+    }, [serverStartTime]);
 
     // Calculate time left
     const calculateTimeLeft = useCallback((): TimeLeft => {
@@ -62,10 +43,17 @@ export default function CountdownTimer({ resetIntervalHours = 24 }: CountdownTim
 
     // Update countdown every second
     useEffect(() => {
-        if (!canvasStartTime) return;
+        if (!canvasStartTime) {
+            console.log('[Timer] No start time yet...');
+            return;
+        }
+
+        console.log('[Timer] Starting countdown with:', new Date(canvasStartTime).toISOString());
 
         const updateTimer = () => {
-            setTimeLeft(calculateTimeLeft());
+            const left = calculateTimeLeft();
+            // console.log('[Timer] Tick:', left); // Verbose
+            setTimeLeft(left);
         };
 
         updateTimer();
@@ -102,6 +90,10 @@ export default function CountdownTimer({ resetIntervalHours = 24 }: CountdownTim
                     <span className={styles.separator}>:</span>
                     <span className={styles.timeUnit}>
                         {formatTime(timeLeft.minutes)}
+                    </span>
+                    <span className={styles.separator}>:</span>
+                    <span className={styles.timeUnit}>
+                        {formatTime(timeLeft.seconds)}
                     </span>
                 </div>
             </div>

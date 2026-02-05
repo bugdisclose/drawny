@@ -20,6 +20,7 @@ export interface ServerToClientEvents {
   'stroke:new': (stroke: Stroke) => void;
   'stroke:update': (stroke: Stroke) => void;
   'canvas:sync': (strokes: Stroke[]) => void;
+  'canvas:state': (state: { startTime: number; strokeCount: number; timeUntilReset: number }) => void;
   'canvas:reset': () => void;
   'users:count': (count: number) => void;
   'cursor:update': (cursor: CursorData) => void;

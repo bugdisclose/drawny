@@ -9,6 +9,7 @@ import { Stroke, COLORS, BrushSize, ToolType, CursorData } from '@/types';
 import Toolbar from '@/components/Toolbar';
 import CountdownTimer from '@/components/CountdownTimer';
 import ConnectionStatus from '@/components/ConnectionStatus';
+import WelcomeHint from '@/components/WelcomeHint';
 import styles from './page.module.css';
 
 // Dynamic import for Canvas to avoid SSR issues
@@ -104,8 +105,15 @@ export default function Home() {
     if (engineRef.current) {
       engineRef.current.clear();
     }
-    // Reset local storage timer as well
-    localStorage.setItem('drawny_canvas_start_time', Date.now().toString());
+    // Server will send the new start time via canvas:state event
+    console.log('[page] Canvas reset, waiting for server state update');
+  }, []);
+
+  const [serverStartTime, setServerStartTime] = useState<number | null>(null);
+
+  const handleCanvasState = useCallback((state: { startTime: number }) => {
+    console.log('[page] Received server start time:', new Date(state.startTime).toISOString());
+    setServerStartTime(state.startTime);
   }, []);
 
   // Handle cursor updates from other users
@@ -141,6 +149,7 @@ export default function Home() {
   } = useSocket({
     onStrokeReceived: handleStrokeReceived,
     onCanvasSync: handleCanvasSync,
+    onCanvasState: handleCanvasState,
     onCanvasReset: handleCanvasReset,
     onCursorUpdate: handleCursorUpdate,
     onCursorRemove: handleCursorRemove,
@@ -260,7 +269,7 @@ export default function Home() {
           </svg>
           Gallery
         </Link>
-        <CountdownTimer />
+        <CountdownTimer serverStartTime={serverStartTime} />
       </div>
 
       <Canvas
@@ -286,6 +295,8 @@ export default function Home() {
         onSizeChange={handleSizeChange}
         onToolChange={handleToolChange}
       />
+
+      <WelcomeHint />
     </main>
   );
 }

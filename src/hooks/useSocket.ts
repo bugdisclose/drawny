@@ -15,6 +15,7 @@ interface Cursor {
 interface UseSocketOptions {
     onStrokeReceived?: (stroke: Stroke) => void;
     onCanvasSync?: (strokes: Stroke[]) => void;
+    onCanvasState?: (state: { startTime: number; strokeCount: number; timeUntilReset: number }) => void;
     onCanvasReset?: () => void;
     onUsersCountChange?: (count: number) => void;
     onCursorUpdate?: (cursor: Cursor) => void;
@@ -31,6 +32,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     const {
         onStrokeReceived,
         onCanvasSync,
+        onCanvasState,
         onCanvasReset,
         onUsersCountChange,
         onCursorUpdate,
@@ -46,13 +48,11 @@ export function useSocket(options: UseSocketOptions = {}) {
 
         try {
             const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({
-                path: '/api/socket',
-                transports: ['polling', 'websocket'], // Polling first for Vercel
-                addTrailingSlash: false,
+                transports: ['websocket', 'polling'],
                 reconnection: true,
-                reconnectionAttempts: 3, // Limited attempts
-                reconnectionDelay: 2000,
-                timeout: 5000,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 10000,
                 autoConnect: true,
             });
 
@@ -88,6 +88,10 @@ export function useSocket(options: UseSocketOptions = {}) {
             socket.on('canvas:sync', (strokes) => {
                 console.log('[useSocket] Canvas sync received:', strokes.length, 'strokes');
                 onCanvasSync?.(strokes);
+            });
+
+            socket.on('canvas:state', (state) => {
+                onCanvasState?.(state);
             });
 
             socket.on('canvas:reset', () => {
@@ -132,7 +136,7 @@ export function useSocket(options: UseSocketOptions = {}) {
             setIsOfflineMode(true);
             setIsConnected(true);
         }
-    }, [onStrokeReceived, onCanvasSync, onCanvasReset, onUsersCountChange, onCursorUpdate, onCursorRemove]);
+    }, [onStrokeReceived, onCanvasSync, onCanvasState, onCanvasReset, onUsersCountChange, onCursorUpdate, onCursorRemove]);
 
     const sendStrokeStart = useCallback((stroke: Stroke) => {
         if (socketRef.current?.connected) {

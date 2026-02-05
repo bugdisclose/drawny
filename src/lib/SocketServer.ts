@@ -15,7 +15,6 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
     }
 
     io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
-        path: '/api/socket',
         cors: {
             origin: '*',
             methods: ['GET', 'POST'],
@@ -37,11 +36,15 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
         console.log('[SocketServer] Client connected:', socket.id);
         broadcastUsersCount();
 
+        // Send initial canvas state immediately on connection
+        socket.emit('canvas:state', strokeStorage.getCanvasInfo());
+
         // Handle canvas sync request
         socket.on('canvas:request-sync', () => {
             console.log('[SocketServer] Canvas sync requested by:', socket.id);
             const strokes = strokeStorage.getAllStrokes();
             socket.emit('canvas:sync', strokes);
+            socket.emit('canvas:state', strokeStorage.getCanvasInfo());
         });
 
         // Handle new stroke
@@ -106,12 +109,16 @@ export function resetCanvas(): void {
     if (io) {
         strokeStorage.reset();
         io.emit('canvas:reset');
-        console.log('[SocketServer] Canvas reset broadcast');
+        // Immediately broadcast the new canvas state with updated start time
+        const canvasInfo = strokeStorage.getCanvasInfo();
+        io.emit('canvas:state', canvasInfo);
+        console.log('[SocketServer] Canvas reset broadcast with new state:', canvasInfo);
     }
 }
 
-// Check for canvas reset every minute
+// Check for canvas reset every minute and broadcast state every 10 seconds
 function setupResetScheduler(): void {
+    // Check for reset every minute
     setInterval(() => {
         if (strokeStorage.shouldReset()) {
             console.log('[SocketServer] Canvas reset triggered by scheduler');
@@ -119,7 +126,15 @@ function setupResetScheduler(): void {
         }
     }, 60 * 1000); // Check every minute
 
-    console.log('[SocketServer] Reset scheduler initialized');
+    // Broadcast canvas state to all clients every 10 seconds
+    setInterval(() => {
+        if (io) {
+            const canvasInfo = strokeStorage.getCanvasInfo();
+            io.emit('canvas:state', canvasInfo);
+        }
+    }, 10 * 1000); // Broadcast every 10 seconds
+
+    console.log('[SocketServer] Reset scheduler and state broadcaster initialized');
 }
 
 export function getSocketServer(): SocketIOServer | null {
