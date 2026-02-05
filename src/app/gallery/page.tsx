@@ -45,7 +45,7 @@ export default function GalleryPage() {
                 <header style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1a1a2e', marginBottom: '8px' }}>Archive Gallery</h1>
-                        <p style={{ color: '#666' }}>Past creations from the collective canvas</p>
+                        <p style={{ color: '#666' }}>Past creations from the strangers</p>
                     </div>
                     <Link href="/" style={{
                         padding: '10px 20px',

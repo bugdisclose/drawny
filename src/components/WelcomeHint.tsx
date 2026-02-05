@@ -43,7 +43,7 @@ export default function WelcomeHint() {
             <div className={styles.content}>
                 <div className={styles.icon}>✨</div>
                 <div className={styles.text}>
-                    <strong>Welcome to the collective canvas!</strong>
+                    <strong>Welcome to the Drawny!</strong>
                     <p>Draw anything. Everyone shares this space. Canvas resets every 24 hours.</p>
                 </div>
                 <button className={styles.closeButton} onClick={handleDismiss} aria-label="Dismiss">

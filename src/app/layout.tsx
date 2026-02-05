@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Drawny - Collective Canvas',
+  title: 'Drawny - Draw with strangers.',
   description: 'Draw together on a shared canvas. No login, no setup — just draw.',
   keywords: ['drawing', 'collaborative', 'canvas', 'art', 'anonymous', 'real-time'],
   authors: [{ name: 'Drawny' }],
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     userScalable: true,
   },
   openGraph: {
-    title: 'Drawny - Collective Canvas',
+    title: 'Drawny - Draw with strangers.',
     description: 'Draw together on a shared canvas. No login, no setup — just draw.',
     type: 'website',
   },

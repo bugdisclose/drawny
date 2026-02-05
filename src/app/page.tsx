@@ -354,7 +354,7 @@ export default function Home() {
       {/* Logo */}
       <div className={styles.logo}>
         <span className={styles.logoText}>drawny</span>
-        <span className={styles.logoTag}>collective canvas</span>
+        <span className={styles.logoTag}>Draw with strangers.</span>
       </div>
 
       {/* Header Actions */}
