@@ -90,30 +90,21 @@ export default function CountdownTimer({ resetIntervalHours = 24 }: CountdownTim
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <span className={styles.label}>Canvas resets in</span>
                 <div className={`${styles.timer} ${isLowTime ? styles.warning : ''}`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4, opacity: 0.7 }}>
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
                     <span className={styles.timeUnit}>
                         {formatTime(timeLeft.hours)}
-                        <span className={styles.unitLabel}>h</span>
                     </span>
                     <span className={styles.separator}>:</span>
                     <span className={styles.timeUnit}>
                         {formatTime(timeLeft.minutes)}
-                        <span className={styles.unitLabel}>m</span>
-                    </span>
-                    <span className={styles.separator}>:</span>
-                    <span className={styles.timeUnit}>
-                        {formatTime(timeLeft.seconds)}
-                        <span className={styles.unitLabel}>s</span>
                     </span>
                 </div>
             </div>
-            <div className={styles.progressBar}>
-                <div
-                    className={`${styles.progressFill} ${isLowTime ? styles.warningFill : ''}`}
-                    style={{ width: `${progress}%` }}
-                />
-            </div>
+
         </div>
     );
 }
