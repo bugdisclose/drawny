@@ -249,4 +249,19 @@
     .helpSection {
         display: none;
     }
+
+    .toolButton {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sizeButton {
+        width: 48px;
+        height: 48px;
+    }
+
+    .colorButton {
+        width: 36px;
+        height: 36px;
+    }
 }

@@ -86,7 +86,8 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
     .container {
-        padding: 6px 12px;
+        padding: 8px 16px;
+        min-height: 40px;
     }
 
     .timer {
