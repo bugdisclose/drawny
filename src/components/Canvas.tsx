@@ -379,6 +379,7 @@ export default function Canvas({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
+            onLostPointerCapture={handlePointerUp}
         >
             <canvas
                 ref={canvasRef}

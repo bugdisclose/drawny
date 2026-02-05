@@ -95,6 +95,7 @@ export default function CountdownTimer({ resetIntervalHours = 24 }: CountdownTim
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                     </svg>
+                    <span className={styles.label}>Resets in</span>
                     <span className={styles.timeUnit}>
                         {formatTime(timeLeft.hours)}
                     </span>
