@@ -25,6 +25,14 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
         pingInterval: 25000,
     });
 
+    attachSocketHandlers(io);
+    return io;
+}
+
+export function attachSocketHandlers(serverIo: SocketIOServer) {
+    io = serverIo;
+    console.log('[SocketServer] Attaching socket handlers');
+
     io.on('connection', (socket) => {
         console.log('[SocketServer] Client connected:', socket.id);
         broadcastUsersCount();
@@ -78,11 +86,12 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
         });
     });
 
+
+
     // Set up canvas reset scheduler
     setupResetScheduler();
 
-    console.log('[SocketServer] Initialized successfully');
-    return io;
+    console.log('[SocketServer] Handlers attached successfully');
 }
 
 function broadcastUsersCount(): void {
