@@ -42,6 +42,16 @@ export default function Home() {
   const [selectedTool, setSelectedTool] = useState<ToolType>('brush');
   const [cursors, setCursors] = useState<Map<string, Cursor>>(new Map());
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+  const [showShareToast, setShowShareToast] = useState(false);
+
+  const handleShare = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 2000);
+      });
+    }
+  }, []);
 
   // Poll for engine availability and draw pending strokes
   useEffect(() => {
@@ -252,7 +262,15 @@ export default function Home() {
 
       {/* Header Actions */}
       <div className={styles.headerRight}>
-        <Link href="/gallery" className={styles.galleryButton}>
+        <button className={styles.actionButton} onClick={handleShare}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
+          </svg>
+          Share
+        </button>
+        <Link href="/gallery" className={styles.actionButton}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
@@ -262,6 +280,13 @@ export default function Home() {
         </Link>
         <CountdownTimer />
       </div>
+
+      {/* Share Toast */}
+      {showShareToast && (
+        <div className={styles.toast}>
+          Link copied to clipboard!
+        </div>
+      )}
 
       <Canvas
         engineRef={engineRef}
