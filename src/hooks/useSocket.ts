@@ -47,7 +47,8 @@ export function useSocket(options: UseSocketOptions = {}) {
         try {
             const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({
                 path: '/api/socket',
-                transports: ['websocket', 'polling'],
+                transports: ['polling', 'websocket'], // Polling first for Vercel
+                addTrailingSlash: false,
                 reconnection: true,
                 reconnectionAttempts: 3, // Limited attempts
                 reconnectionDelay: 2000,
