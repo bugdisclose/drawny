@@ -59,6 +59,15 @@ export default function Toolbar({
                         <span className={styles.sectionLabel}>Tool</span>
                         <div className={styles.toolButtons}>
                             <button
+                                className={`${styles.toolButton} ${selectedTool === 'hand' ? styles.selected : ''}`}
+                                onClick={() => onToolChange('hand')}
+                                title="Hand (H / Space)"
+                            >
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16L8 16.3V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V12h1V3.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V12h1V1.5c0-.83.67-1.5 1.5-1.5S17.5.67 17.5 1.5V12h1v-6.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z" />
+                                </svg>
+                            </button>
+                            <button
                                 className={`${styles.toolButton} ${selectedTool === 'brush' ? styles.selected : ''}`}
                                 onClick={() => onToolChange('brush')}
                                 title="Brush (B)"

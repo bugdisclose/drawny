@@ -194,7 +194,9 @@ export default function Home() {
 
   const handleToolChange = useCallback((tool: ToolType) => {
     setSelectedTool(tool);
-    engineRef.current?.setTool(tool);
+    if (tool !== 'hand') {
+      engineRef.current?.setTool(tool);
+    }
   }, []);
 
   // Keyboard shortcuts
@@ -220,6 +222,9 @@ export default function Home() {
           break;
         case '3':
           handleSizeChange('large');
+          break;
+        case 'h':
+          handleToolChange('hand');
           break;
       }
     };
@@ -265,6 +270,7 @@ export default function Home() {
         onStrokeEnd={handleStrokeEnd}
         onCursorMove={handleCursorMove}
         onViewportChange={handleViewportChange}
+        activeTool={selectedTool}
       />
 
       {/* Remote cursors */}

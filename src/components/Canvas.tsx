@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { DrawingEngine } from '@/lib/DrawingEngine';
-import { Stroke, CANVAS_CONFIG } from '@/types';
+import { Stroke, CANVAS_CONFIG, ToolType } from '@/types';
 import styles from './Canvas.module.css';
 
 // Helper functions for gestures
@@ -23,6 +23,7 @@ interface CanvasProps {
     onViewportChange?: (viewport: { x: number; y: number; zoom: number }) => void;
     engineRef?: React.MutableRefObject<DrawingEngine | null>;
     readOnly?: boolean;
+    activeTool?: ToolType;
 }
 
 export default function Canvas({
@@ -32,7 +33,8 @@ export default function Canvas({
     onCursorMove,
     onViewportChange,
     engineRef,
-    readOnly = false
+    readOnly = false,
+    activeTool = 'brush'
 }: CanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -199,8 +201,8 @@ export default function Canvas({
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
 
-        // Check for pan mode (middle mouse, space+click, or readOnly)
-        if (e.button === 1 || isSpacePressedRef.current || readOnly) {
+        // Check for pan mode (middle mouse, space+click, readOnly, or hand tool)
+        if (e.button === 1 || isSpacePressedRef.current || readOnly || activeTool === 'hand') {
             setIsPanning(true);
             lastPanPositionRef.current = { x: screenX, y: screenY };
             container.style.cursor = 'grabbing';
@@ -317,7 +319,7 @@ export default function Canvas({
             } catch {
                 // Ignore
             }
-            container.style.cursor = isSpacePressedRef.current ? 'grab' : 'crosshair';
+            container.style.cursor = (isSpacePressedRef.current || activeTool === 'hand') ? 'grab' : 'crosshair';
         }
     }, []);
 

@@ -4,7 +4,7 @@ export interface Stroke {
   points: Point[];
   color: string;
   size: number;
-  tool: 'brush' | 'eraser';
+  tool: StrokeTool;
   timestamp: number;
   userId: string;
 }
@@ -43,7 +43,8 @@ export interface CursorData {
 }
 
 // Drawing tool types
-export type ToolType = 'brush' | 'eraser';
+export type StrokeTool = 'brush' | 'eraser';
+export type ToolType = StrokeTool | 'hand';
 
 // Predefined color palette
 export const COLORS = [

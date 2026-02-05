@@ -1,4 +1,4 @@
-import { Stroke, Point, ToolType, BRUSH_SIZES, BrushSize, CANVAS_CONFIG } from '@/types';
+import { Stroke, Point, StrokeTool, BRUSH_SIZES, BrushSize, CANVAS_CONFIG } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface DrawingEngineConfig {
@@ -18,7 +18,7 @@ export class DrawingEngine {
     // Drawing state
     private color = '#1e1e1e';
     private brushSize: BrushSize = 'medium';
-    private tool: ToolType = 'brush';
+    private tool: StrokeTool = 'brush';
     private userId: string;
 
     // Rate limiting: max 10 strokes per second (generous for smooth drawing)
@@ -282,7 +282,7 @@ export class DrawingEngine {
         console.log('[DrawingEngine] Brush size set:', size, '(', BRUSH_SIZES[size], 'px)');
     }
 
-    setTool(tool: ToolType): void {
+    setTool(tool: StrokeTool): void {
         this.tool = tool;
         console.log('[DrawingEngine] Tool set:', tool);
     }
@@ -290,6 +290,6 @@ export class DrawingEngine {
     // Getters
     getColor(): string { return this.color; }
     getBrushSize(): BrushSize { return this.brushSize; }
-    getTool(): ToolType { return this.tool; }
+    getTool(): StrokeTool { return this.tool; }
     getUserId(): string { return this.userId; }
 }
