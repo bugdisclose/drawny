@@ -392,6 +392,10 @@ export default function Home() {
         onColorChange={handleColorChange}
         onSizeChange={handleSizeChange}
         onToolChange={handleToolChange}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={userStrokes.length > 0}
+        canRedo={undoneStrokes.length > 0}
       />
 
       <WelcomeHint />

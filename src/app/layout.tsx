@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description: 'Draw together on a shared canvas. No login, no setup — just draw.',
   keywords: ['drawing', 'collaborative', 'canvas', 'art', 'anonymous', 'real-time'],
   authors: [{ name: 'Drawny' }],
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
   openGraph: {
     title: 'Drawny - Collective Canvas',
     description: 'Draw together on a shared canvas. No login, no setup — just draw.',

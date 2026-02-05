@@ -678,25 +678,7 @@ export default function Canvas({
                 </button>
             </div>
 
-            {/* Help text with keyboard shortcuts */}
-            <div className={styles.helpText}>
-                <span className={styles.helpItem}>
-                    <span className={styles.helpKey}>Space</span>
-                    + drag to pan
-                </span>
-                <span className={styles.helpItem}>
-                    <span className={styles.helpKey}>Scroll</span>
-                    to zoom
-                </span>
-                <span className={styles.helpItem}>
-                    <span className={styles.helpKey}>B</span>
-                    brush
-                </span>
-                <span className={styles.helpItem}>
-                    <span className={styles.helpKey}>E</span>
-                    eraser
-                </span>
-            </div>
+
         </div>
     );
 }

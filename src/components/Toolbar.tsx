@@ -13,6 +13,10 @@ interface ToolbarProps {
     onColorChange: (color: string) => void;
     onSizeChange: (size: BrushSize) => void;
     onToolChange: (tool: ToolType) => void;
+    onUndo?: () => void;
+    onRedo?: () => void;
+    canUndo?: boolean;
+    canRedo?: boolean;
 }
 
 export default function Toolbar({
@@ -24,6 +28,10 @@ export default function Toolbar({
     onColorChange,
     onSizeChange,
     onToolChange,
+    onUndo,
+    onRedo,
+    canUndo = false,
+    canRedo = false,
 }: ToolbarProps) {
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -50,9 +58,11 @@ export default function Toolbar({
                     <div className={styles.statusSection}>
                         <div className={`${styles.connectionDot} ${isConnected ? styles.connected : styles.disconnected}`} />
                         <span className={styles.usersCount}>
-                            {usersCount} {usersCount === 1 ? 'artist' : 'artists'}
+                            {usersCount} {usersCount === 1 ? 'artist' : 'Artists online'}
                         </span>
                     </div>
+
+
 
                     {/* Tool selection */}
                     <div className={styles.section}>
@@ -128,11 +138,34 @@ export default function Toolbar({
                         </div>
                     </div>
 
-                    {/* Help text */}
-                    <div className={styles.helpSection}>
-                        <div className={styles.helpText}>Space + drag to pan</div>
-                        <div className={styles.helpText}>Scroll to zoom</div>
-                    </div>
+                    {/* Undo/Redo buttons - in place of help text */}
+                    {(onUndo || onRedo) && (
+                        <div className={styles.section}>
+                            <span className={styles.sectionLabel}>History</span>
+                            <div className={styles.toolButtons}>
+                                <button
+                                    className={`${styles.toolButton} ${styles.undoRedoButton}`}
+                                    onClick={onUndo}
+                                    disabled={!canUndo}
+                                    title="Undo (Ctrl+Z)"
+                                >
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                        <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" />
+                                    </svg>
+                                </button>
+                                <button
+                                    className={`${styles.toolButton} ${styles.undoRedoButton}`}
+                                    onClick={onRedo}
+                                    disabled={!canRedo}
+                                    title="Redo (Ctrl+Shift+Z)"
+                                >
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                        <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </div>

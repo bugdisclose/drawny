@@ -137,6 +137,16 @@
     color: #ffffff;
 }
 
+.toolButton:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.undoRedoButton:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 .colorPalette {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -214,26 +224,84 @@
     font-size: 11px;
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
+/* Tablet responsive (iPad) */
+@media (max-width: 1024px) and (min-width: 769px) {
     .toolbar {
         top: auto;
-        bottom: 20px;
+        bottom: 24px;
         left: 50%;
         transform: translateX(-50%);
         flex-direction: row;
         flex-wrap: wrap;
-        max-width: 90vw;
+        max-width: 95vw;
         justify-content: center;
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .section {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sectionLabel {
+        font-size: 12px;
+        min-width: 60px;
+    }
+
+    .toolButton {
+        width: 52px;
+        height: 52px;
+    }
+
+    .sizeButton {
+        width: 52px;
+        height: 52px;
+    }
+
+    .colorButton {
+        width: 40px;
+        height: 40px;
+    }
+
+    .helpSection {
+        display: none;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        top: auto;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-width: 95vw;
+        justify-content: center;
+        padding: 12px;
+        gap: 12px;
+        border-radius: 16px;
     }
 
     .collapsed {
         flex-direction: row;
     }
 
+    .toggleButton {
+        order: -1;
+        width: 40px;
+        height: 40px;
+    }
+
     .statusSection {
         border-bottom: none;
         padding-bottom: 0;
+        width: 100%;
+        justify-content: center;
+        order: -2;
     }
 
     .section {
@@ -251,6 +319,42 @@
     }
 
     .toolButton {
+        width: 52px;
+        height: 52px;
+        font-size: 18px;
+    }
+
+    .toolButton svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .sizeButton {
+        width: 52px;
+        height: 52px;
+    }
+
+    .colorButton {
+        width: 40px;
+        height: 40px;
+    }
+
+    .colorPalette {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+}
+
+/* Extra small mobile */
+@media (max-width: 480px) {
+    .toolbar {
+        bottom: 8px;
+        max-width: 98vw;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .toolButton {
         width: 48px;
         height: 48px;
     }
@@ -263,5 +367,10 @@
     .colorButton {
         width: 36px;
         height: 36px;
+    }
+
+    .colorPalette {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
     }
 }
