@@ -268,8 +268,8 @@ export default function Canvas({
         onCursorMove?.(canvasCoords.x, canvasCoords.y);
 
         if (isPanning) {
-            // Check if it's a mouse pan or leftover gesture state
-            if (activePointers.current.size === 0 || e.pointerType === 'mouse') {
+            // Check if it's a single pointer pan (mouse or touch)
+            if (activePointers.current.size <= 1) {
                 const dx = screenX - lastPanPositionRef.current.x;
                 const dy = screenY - lastPanPositionRef.current.y;
 
