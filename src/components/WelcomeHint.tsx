@@ -4,22 +4,52 @@ import React, { useEffect, useState } from 'react';
 import styles from './WelcomeHint.module.css';
 
 export default function WelcomeHint() {
-    const [visible, setVisible] = useState(true);
+    const [visible, setVisible] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
 
     useEffect(() => {
-        // Remove from DOM after animation completes (5s)
-        const timer = setTimeout(() => {
-            setVisible(false);
-        }, 5000);
+        // Check if user has seen the hint before
+        const hasSeenHint = localStorage.getItem('drawny_seen_hint');
 
-        return () => clearTimeout(timer);
+        if (!hasSeenHint) {
+            // Show hint after a brief delay for better UX
+            const showTimer = setTimeout(() => {
+                setVisible(true);
+            }, 800);
+
+            // Auto-hide after 8 seconds
+            const hideTimer = setTimeout(() => {
+                setVisible(false);
+                localStorage.setItem('drawny_seen_hint', 'true');
+            }, 8800);
+
+            return () => {
+                clearTimeout(showTimer);
+                clearTimeout(hideTimer);
+            };
+        }
     }, []);
 
-    if (!visible) return null;
+    const handleDismiss = () => {
+        setDismissed(true);
+        setVisible(false);
+        localStorage.setItem('drawny_seen_hint', 'true');
+    };
+
+    if (!visible || dismissed) return null;
 
     return (
         <div className={styles.container}>
-            This canvas resets every 24 hours. Anyone can draw. Be kind or be chaotic.
+            <div className={styles.content}>
+                <div className={styles.icon}>✨</div>
+                <div className={styles.text}>
+                    <strong>Welcome to the collective canvas!</strong>
+                    <p>Draw anything. Everyone shares this space. Canvas resets every 24 hours.</p>
+                </div>
+                <button className={styles.closeButton} onClick={handleDismiss} aria-label="Dismiss">
+                    ×
+                </button>
+            </div>
         </div>
     );
 }

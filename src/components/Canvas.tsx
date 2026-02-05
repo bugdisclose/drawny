@@ -50,7 +50,73 @@ export default function Canvas({
     const [viewportState, setViewportState] = useState(viewportRef.current);
     const lastUpdateRef = useRef(0);
 
-    // Direct DOM update for smooth performance
+    // Animation state for smooth zoom
+    const animationFrameRef = useRef<number | null>(null);
+    const targetViewportRef = useRef(viewportRef.current);
+    const isAnimatingRef = useRef(false);
+
+    // Smooth animation loop - defined once and stored in ref
+    const animateViewportRef = useRef<() => void>();
+
+    useEffect(() => {
+        animateViewportRef.current = () => {
+            if (!isAnimatingRef.current) return;
+
+            const current = viewportRef.current;
+            const target = targetViewportRef.current;
+
+            // Smooth interpolation (ease-out) - much smoother!
+            const lerp = (start: number, end: number, factor: number) => {
+                return start + (end - start) * factor;
+            };
+
+            const smoothFactor = 0.35; // Increased for faster, smoother animation
+            const threshold = 0.01; // Slightly higher threshold
+
+            const newX = lerp(current.x, target.x, smoothFactor);
+            const newY = lerp(current.y, target.y, smoothFactor);
+            const newZoom = lerp(current.zoom, target.zoom, smoothFactor);
+
+            // Check if we're close enough to target
+            const deltaX = Math.abs(target.x - newX);
+            const deltaY = Math.abs(target.y - newY);
+            const deltaZoom = Math.abs(target.zoom - newZoom);
+
+            if (deltaX < threshold && deltaY < threshold && deltaZoom < 0.001) {
+                // Animation complete - snap to target
+                viewportRef.current = target;
+                isAnimatingRef.current = false;
+            } else {
+                // Continue animating
+                viewportRef.current = { x: newX, y: newY, zoom: newZoom };
+                animationFrameRef.current = requestAnimationFrame(animateViewportRef.current!);
+            }
+
+            // Update DOM immediately for smooth 60fps
+            if (canvasRef.current) {
+                const { x, y, zoom } = viewportRef.current;
+                canvasRef.current.style.transform = `translate(${-x}px, ${-y}px) scale(${zoom})`;
+            }
+
+            // Update React state every frame for smooth zoom indicator
+            setViewportState({ ...viewportRef.current });
+            onViewportChange?.(viewportRef.current);
+        };
+    }, [onViewportChange]);
+
+    // Start smooth animation to target viewport
+    const smoothTransitionTo = useCallback((target: { x: number; y: number; zoom: number }) => {
+        targetViewportRef.current = target;
+
+        if (!isAnimatingRef.current) {
+            isAnimatingRef.current = true;
+            if (animateViewportRef.current) {
+                animateViewportRef.current();
+            }
+        }
+    }, []);
+
+    // Direct DOM update for immediate feedback (used during dragging)
     const updateTransform = useCallback(() => {
         if (canvasRef.current) {
             const { x, y, zoom } = viewportRef.current;
@@ -61,17 +127,89 @@ export default function Canvas({
     // Throttled UI update
     const updateUI = useCallback(() => {
         const now = Date.now();
-        if (now - lastUpdateRef.current > 32) { // ~30fps for UI is sufficient
+        if (now - lastUpdateRef.current > 16) { // ~60fps for smoother UI
             setViewportState({ ...viewportRef.current });
             onViewportChange?.(viewportRef.current);
             lastUpdateRef.current = now;
         }
     }, [onViewportChange]);
 
+    // Momentum panning animation
+    const applyMomentum = useCallback(() => {
+        const friction = 0.92; // Deceleration factor
+        const minVelocity = 0.1; // Stop when velocity is very small
+
+        const vx = panVelocityRef.current.x;
+        const vy = panVelocityRef.current.y;
+
+        if (Math.abs(vx) < minVelocity && Math.abs(vy) < minVelocity) {
+            // Stop momentum
+            panVelocityRef.current = { x: 0, y: 0 };
+            if (momentumAnimationRef.current) {
+                cancelAnimationFrame(momentumAnimationRef.current);
+                momentumAnimationRef.current = null;
+            }
+            return;
+        }
+
+        // Apply velocity to viewport
+        viewportRef.current = {
+            ...viewportRef.current,
+            x: viewportRef.current.x - vx,
+            y: viewportRef.current.y - vy,
+        };
+
+        // Apply friction
+        panVelocityRef.current = {
+            x: vx * friction,
+            y: vy * friction,
+        };
+
+        updateTransform();
+        updateUI();
+
+        // Continue animation
+        momentumAnimationRef.current = requestAnimationFrame(applyMomentum);
+    }, [updateTransform, updateUI]);
+
+    // Start momentum animation
+    const startMomentum = useCallback(() => {
+        if (momentumAnimationRef.current) {
+            cancelAnimationFrame(momentumAnimationRef.current);
+        }
+        momentumAnimationRef.current = requestAnimationFrame(applyMomentum);
+    }, [applyMomentum]);
+
+    // Stop momentum animation
+    const stopMomentum = useCallback(() => {
+        if (momentumAnimationRef.current) {
+            cancelAnimationFrame(momentumAnimationRef.current);
+            momentumAnimationRef.current = null;
+        }
+        panVelocityRef.current = { x: 0, y: 0 };
+    }, []);
+
+    // Cleanup animation frames on unmount
+    useEffect(() => {
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            if (momentumAnimationRef.current) {
+                cancelAnimationFrame(momentumAnimationRef.current);
+            }
+        };
+    }, []);
+
     const [isPanning, setIsPanning] = useState(false);
     const lastPanPositionRef = useRef({ x: 0, y: 0 });
     const isSpacePressedRef = useRef(false);
     const [isSpacePressed, setIsSpacePressed] = useState(false);
+
+    // Momentum panning state
+    const panVelocityRef = useRef({ x: 0, y: 0 });
+    const lastPanTimeRef = useRef(0);
+    const momentumAnimationRef = useRef<number | null>(null);
 
     // Touch gesture state
     const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -228,6 +366,8 @@ export default function Canvas({
         if (e.button === 1 || isSpacePressedRef.current || readOnly || activeTool === 'hand') {
             setIsPanning(true);
             lastPanPositionRef.current = { x: screenX, y: screenY };
+            lastPanTimeRef.current = Date.now();
+            stopMomentum(); // Stop any existing momentum
             container.style.cursor = 'grabbing';
             e.preventDefault();
             return;
@@ -242,7 +382,7 @@ export default function Canvas({
             const { x, y } = screenToCanvas(screenX, screenY);
             engine.startStroke(x, y, e.pressure || 1);
         }
-    }, [screenToCanvas, readOnly]);
+    }, [screenToCanvas, readOnly, activeTool, stopMomentum]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
         const container = containerRef.current;
@@ -293,8 +433,19 @@ export default function Canvas({
         if (isPanning) {
             // Check if it's a single pointer pan (mouse or touch)
             if (activePointers.current.size <= 1) {
+                const now = Date.now();
+                const dt = now - lastPanTimeRef.current;
+
                 const dx = screenX - lastPanPositionRef.current.x;
                 const dy = screenY - lastPanPositionRef.current.y;
+
+                // Calculate velocity for momentum
+                if (dt > 0) {
+                    panVelocityRef.current = {
+                        x: dx / (dt / 16), // Normalize to ~60fps
+                        y: dy / (dt / 16),
+                    };
+                }
 
                 viewportRef.current = {
                     ...viewportRef.current,
@@ -303,7 +454,9 @@ export default function Canvas({
                 };
                 updateTransform();
                 updateUI();
+
                 lastPanPositionRef.current = { x: screenX, y: screenY };
+                lastPanTimeRef.current = now;
             }
             return;
         }
@@ -325,8 +478,18 @@ export default function Canvas({
             lastPinchDist.current = null;
             lastPinchCenter.current = null;
 
-            // If we were pinching, we might want to stop panning
+            // If we were pinching or panning, stop and apply momentum
             if (activePointers.current.size === 0) {
+                if (isPanning) {
+                    // Start momentum animation if velocity is significant
+                    const vx = panVelocityRef.current.x;
+                    const vy = panVelocityRef.current.y;
+                    const speed = Math.sqrt(vx * vx + vy * vy);
+
+                    if (speed > 0.5) {
+                        startMomentum();
+                    }
+                }
                 setIsPanning(false);
             }
         }
@@ -344,9 +507,56 @@ export default function Canvas({
             }
             container.style.cursor = (isSpacePressedRef.current || activeTool === 'hand') ? 'grab' : 'crosshair';
         }
-    }, []);
+    }, [isPanning, startMomentum]);
 
 
+
+    // Zoom in/out functions
+    const zoomIn = useCallback(() => {
+        if (typeof window === 'undefined') return;
+
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        const currentZoom = viewportRef.current.zoom;
+        const newZoom = Math.min(CANVAS_CONFIG.maxZoom, currentZoom * 1.2);
+
+        // Calculate the canvas point at screen center
+        const canvasX = (centerX + viewportRef.current.x) / currentZoom;
+        const canvasY = (centerY + viewportRef.current.y) / currentZoom;
+
+        // Calculate new viewport to keep center point centered
+        const targetViewport = {
+            x: centerX - canvasX * newZoom,
+            y: centerY - canvasY * newZoom,
+            zoom: newZoom,
+        };
+
+        smoothTransitionTo(targetViewport);
+    }, [smoothTransitionTo]);
+
+    const zoomOut = useCallback(() => {
+        if (typeof window === 'undefined') return;
+
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        const currentZoom = viewportRef.current.zoom;
+        const newZoom = Math.max(CANVAS_CONFIG.minZoom, currentZoom / 1.2);
+
+        // Calculate the canvas point at screen center
+        const canvasX = (centerX + viewportRef.current.x) / currentZoom;
+        const canvasY = (centerY + viewportRef.current.y) / currentZoom;
+
+        // Calculate new viewport to keep center point centered
+        const targetViewport = {
+            x: centerX - canvasX * newZoom,
+            y: centerY - canvasY * newZoom,
+            zoom: newZoom,
+        };
+
+        smoothTransitionTo(targetViewport);
+    }, [smoothTransitionTo]);
 
     // Reset view to center
     const resetView = useCallback(() => {
@@ -356,12 +566,10 @@ export default function Canvas({
             y: (CANVAS_CONFIG.height - window.innerHeight) / 2,
             zoom: 1,
         };
-        viewportRef.current = newViewport;
-        updateTransform();
-        setViewportState(newViewport); // Immediate update for reset
-    }, [updateTransform]);
+        smoothTransitionTo(newViewport);
+    }, [smoothTransitionTo]);
 
-    // Attach non-passive wheel listener to fix scroll error
+    // Ultra-smooth wheel zoom
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -373,26 +581,55 @@ export default function Canvas({
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            // Determine zoom direction and factor
+            // Use smaller steps for smoother zoom
+            const delta = e.deltaY;
+            const zoomIntensity = 0.002; // Very small steps for ultra-smooth zoom
+            const zoomFactor = Math.exp(-delta * zoomIntensity);
+
             const currentZoom = viewportRef.current.zoom;
             const newZoom = Math.max(
                 CANVAS_CONFIG.minZoom,
                 Math.min(CANVAS_CONFIG.maxZoom, currentZoom * zoomFactor)
             );
 
-            const scale = newZoom / currentZoom;
-            viewportRef.current = {
-                x: mouseX + (viewportRef.current.x - mouseX) * scale,
-                y: mouseY + (viewportRef.current.y - mouseY) * scale,
+            // Calculate the canvas point under the mouse
+            const canvasX = (mouseX + viewportRef.current.x) / currentZoom;
+            const canvasY = (mouseY + viewportRef.current.y) / currentZoom;
+
+            // Calculate new viewport to keep that point under the mouse
+            const targetViewport = {
+                x: mouseX - canvasX * newZoom,
+                y: mouseY - canvasY * newZoom,
                 zoom: newZoom,
             };
-            updateTransform();
-            updateUI();
+
+            // Use smooth transition for zoom
+            smoothTransitionTo(targetViewport);
         };
 
         container.addEventListener('wheel', onWheel, { passive: false });
-        return () => container.removeEventListener('wheel', onWheel);
-    }, [updateTransform, updateUI]);
+        return () => {
+            container.removeEventListener('wheel', onWheel);
+        };
+    }, [smoothTransitionTo]);
+
+    // Update cursor when tool changes
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        // Reset cursor when tool changes (unless we're actively panning)
+        if (!isPanning) {
+            if (activeTool === 'hand') {
+                container.style.cursor = 'grab';
+            } else if (readOnly) {
+                container.style.cursor = 'grab';
+            } else {
+                container.style.cursor = 'crosshair';
+            }
+        }
+    }, [activeTool, isPanning, readOnly]);
 
     return (
         <div
@@ -415,10 +652,28 @@ export default function Canvas({
                 }}
             />
 
-            {/* Zoom indicator */}
-            <div className={styles.zoomIndicator}>
-                {Math.round(viewportState.zoom * 100)}%
-                <button onClick={resetView} className={styles.resetButton}>
+            {/* Zoom controls */}
+            <div className={styles.zoomControls}>
+                <button
+                    onClick={zoomOut}
+                    className={styles.zoomButton}
+                    title="Zoom out"
+                    disabled={viewportState.zoom <= CANVAS_CONFIG.minZoom}
+                >
+                    −
+                </button>
+                <div className={styles.zoomIndicator}>
+                    {Math.round(viewportState.zoom * 100)}%
+                </div>
+                <button
+                    onClick={zoomIn}
+                    className={styles.zoomButton}
+                    title="Zoom in"
+                    disabled={viewportState.zoom >= CANVAS_CONFIG.maxZoom}
+                >
+                    +
+                </button>
+                <button onClick={resetView} className={styles.resetButton} title="Reset zoom">
                     Reset
                 </button>
             </div>

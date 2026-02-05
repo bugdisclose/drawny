@@ -14,6 +14,7 @@ interface Cursor {
 
 interface UseSocketOptions {
     onStrokeReceived?: (stroke: Stroke) => void;
+    onStrokeDeleted?: (strokeId: string) => void;
     onCanvasSync?: (strokes: Stroke[]) => void;
     onCanvasState?: (state: { startTime: number; strokeCount: number; timeUntilReset: number }) => void;
     onCanvasReset?: () => void;
@@ -31,6 +32,7 @@ export function useSocket(options: UseSocketOptions = {}) {
 
     const {
         onStrokeReceived,
+        onStrokeDeleted,
         onCanvasSync,
         onCanvasState,
         onCanvasReset,
@@ -85,6 +87,11 @@ export function useSocket(options: UseSocketOptions = {}) {
                 onStrokeReceived?.(stroke);
             });
 
+            socket.on('stroke:delete', (strokeId) => {
+                console.log('[useSocket] Stroke deleted:', strokeId);
+                onStrokeDeleted?.(strokeId);
+            });
+
             socket.on('canvas:sync', (strokes) => {
                 console.log('[useSocket] Canvas sync received:', strokes.length, 'strokes');
                 onCanvasSync?.(strokes);
@@ -136,7 +143,7 @@ export function useSocket(options: UseSocketOptions = {}) {
             setIsOfflineMode(true);
             setIsConnected(true);
         }
-    }, [onStrokeReceived, onCanvasSync, onCanvasState, onCanvasReset, onUsersCountChange, onCursorUpdate, onCursorRemove]);
+    }, [onStrokeReceived, onStrokeDeleted, onCanvasSync, onCanvasState, onCanvasReset, onUsersCountChange, onCursorUpdate, onCursorRemove]);
 
     const sendStrokeStart = useCallback((stroke: Stroke) => {
         if (socketRef.current?.connected) {
@@ -163,6 +170,12 @@ export function useSocket(options: UseSocketOptions = {}) {
         }
     }, []);
 
+    const sendStrokeDelete = useCallback((strokeId: string, userId: string) => {
+        if (socketRef.current?.connected) {
+            socketRef.current.emit('stroke:delete', strokeId, userId);
+        }
+    }, []);
+
     const requestSync = useCallback(() => {
         if (socketRef.current?.connected) {
             socketRef.current.emit('canvas:request-sync');
@@ -182,6 +195,7 @@ export function useSocket(options: UseSocketOptions = {}) {
         sendStrokeStart,
         sendStrokeUpdate,
         sendStrokeEnd,
+        sendStrokeDelete,
         sendCursorMove,
         requestSync,
         reconnect,

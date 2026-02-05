@@ -67,6 +67,19 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
             socket.broadcast.emit('stroke:new', stroke);
         });
 
+        // Handle stroke deletion (for undo)
+        socket.on('stroke:delete', (strokeId: string, userId: string) => {
+            const stroke = strokeStorage.getStroke(strokeId);
+            // Only allow users to delete their own strokes
+            if (stroke && stroke.userId === userId) {
+                strokeStorage.deleteStroke(strokeId);
+                io?.emit('stroke:delete', strokeId);
+                console.log('[SocketServer] Stroke deleted:', strokeId, 'by user:', userId);
+            } else {
+                console.log('[SocketServer] Unauthorized stroke deletion attempt:', strokeId, 'by user:', userId);
+            }
+        });
+
         // Handle cursor movement
         socket.on('cursor:move', (cursor: CursorData) => {
             userCursors.set(cursor.userId, { cursor, socketId: socket.id });

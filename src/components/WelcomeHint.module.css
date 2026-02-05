@@ -3,32 +3,113 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    pointer-events: none;
-    /* Non-blocking */
     z-index: 2000;
-    /* Above everything */
-    padding: 16px 24px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    border-radius: 99px;
-    /* Pill shape */
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    animation: fadeOut 1s ease-in-out 4s forwards;
-    /* Wait 4s, fade 1s = 5s total */
+    animation: slideIn 0.4s ease-out;
 }
 
-@keyframes fadeOut {
+@keyframes slideIn {
     from {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateY(20px);
+    }
+    to {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%, -50%) translateY(0);
+    }
+}
+
+.content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 28px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+    pointer-events: auto;
+    max-width: 500px;
+}
+
+.icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+.text {
+    flex: 1;
+    color: #1a1a2e;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.text strong {
+    display: block;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: #0f3460;
+}
+
+.text p {
+    margin: 0;
+    color: rgba(26, 26, 46, 0.7);
+    font-weight: 500;
+}
+
+.closeButton {
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    color: rgba(26, 26, 46, 0.5);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 300;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.closeButton:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(26, 26, 46, 0.8);
+    transform: scale(1.1);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content {
+        max-width: calc(100vw - 40px);
+        padding: 16px 20px;
+        gap: 12px;
     }
 
-    to {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.95);
+    .icon {
+        font-size: 24px;
+    }
+
+    .text {
+        font-size: 13px;
+    }
+
+    .text strong {
+        font-size: 14px;
     }
 }

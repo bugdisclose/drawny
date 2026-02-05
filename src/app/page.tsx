@@ -44,6 +44,11 @@ export default function Home() {
   const [cursors, setCursors] = useState<Map<string, Cursor>>(new Map());
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
 
+  // Undo/Redo state - track user's own strokes
+  const [userStrokes, setUserStrokes] = useState<Stroke[]>([]);
+  const [undoneStrokes, setUndoneStrokes] = useState<Stroke[]>([]);
+  const [allStrokes, setAllStrokes] = useState<Stroke[]>([]);
+
   // Poll for engine availability and draw pending strokes
   useEffect(() => {
     const checkEngine = setInterval(() => {
@@ -79,6 +84,14 @@ export default function Home() {
 
   // Handle incoming strokes from other users
   const handleStrokeReceived = useCallback((stroke: Stroke) => {
+    setAllStrokes(prev => {
+      const existing = prev.find(s => s.id === stroke.id);
+      if (existing) {
+        return prev.map(s => s.id === stroke.id ? stroke : s);
+      }
+      return [...prev, stroke];
+    });
+
     if (engineRef.current) {
       // Don't draw our own strokes (they're already drawn locally)
       if (stroke.userId !== engineRef.current.getUserId()) {
@@ -87,9 +100,36 @@ export default function Home() {
     }
   }, []);
 
+  // Handle stroke deletion
+  const handleStrokeDeleted = useCallback((strokeId: string) => {
+    console.log('[page] Stroke deleted:', strokeId);
+
+    setAllStrokes(prev => {
+      const remainingStrokes = prev.filter(s => s.id !== strokeId);
+
+      // Redraw canvas without the deleted stroke
+      if (engineRef.current) {
+        engineRef.current.clear();
+        engineRef.current.drawStrokes(remainingStrokes);
+      }
+
+      return remainingStrokes;
+    });
+
+    setUserStrokes(prev => prev.filter(s => s.id !== strokeId));
+  }, []);
+
   // Handle canvas sync from server
   const handleCanvasSync = useCallback((strokes: Stroke[]) => {
     console.log('[page] Canvas sync received with', strokes.length, 'strokes, engine ready:', !!engineRef.current);
+    setAllStrokes(strokes);
+
+    // Set user's own strokes for undo/redo
+    if (engineRef.current) {
+      const userId = engineRef.current.getUserId();
+      setUserStrokes(strokes.filter(s => s.userId === userId));
+    }
+
     if (engineRef.current) {
       engineRef.current.clear();
       engineRef.current.drawStrokes(strokes);
@@ -144,10 +184,12 @@ export default function Home() {
     sendStrokeStart,
     sendStrokeUpdate,
     sendStrokeEnd,
+    sendStrokeDelete,
     sendCursorMove,
     reconnect,
   } = useSocket({
     onStrokeReceived: handleStrokeReceived,
+    onStrokeDeleted: handleStrokeDeleted,
     onCanvasSync: handleCanvasSync,
     onCanvasState: handleCanvasState,
     onCanvasReset: handleCanvasReset,
@@ -166,6 +208,50 @@ export default function Home() {
 
   const handleStrokeEnd = useCallback((stroke: Stroke) => {
     sendStrokeEnd(stroke);
+    // Add to user's stroke history for undo
+    setUserStrokes(prev => [...prev, stroke]);
+    setAllStrokes(prev => [...prev, stroke]);
+    // Clear redo stack when new stroke is made
+    setUndoneStrokes([]);
+  }, [sendStrokeEnd]);
+
+  // Undo/Redo functions
+  const handleUndo = useCallback(() => {
+    setUserStrokes(prev => {
+      if (prev.length === 0) return prev;
+
+      const lastStroke = prev[prev.length - 1];
+      console.log('[page] Undo stroke:', lastStroke.id);
+
+      // Add to undone stack
+      setUndoneStrokes(undone => [...undone, lastStroke]);
+
+      // Send delete to server
+      if (engineRef.current) {
+        sendStrokeDelete(lastStroke.id, engineRef.current.getUserId());
+      }
+
+      // Remove from user strokes
+      return prev.slice(0, -1);
+    });
+  }, [sendStrokeDelete]);
+
+  const handleRedo = useCallback(() => {
+    setUndoneStrokes(prev => {
+      if (prev.length === 0) return prev;
+
+      const strokeToRedo = prev[prev.length - 1];
+      console.log('[page] Redo stroke:', strokeToRedo.id);
+
+      // Add back to user strokes
+      setUserStrokes(userStrokes => [...userStrokes, strokeToRedo]);
+
+      // Re-send to server
+      sendStrokeEnd(strokeToRedo);
+
+      // Remove from undone stack
+      return prev.slice(0, -1);
+    });
   }, [sendStrokeEnd]);
 
   // Handle cursor movement (throttled)
@@ -216,6 +302,18 @@ export default function Home() {
         return;
       }
 
+      // Undo/Redo shortcuts
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
       switch (e.key.toLowerCase()) {
         case 'b':
           handleToolChange('brush');
@@ -240,7 +338,7 @@ export default function Home() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleToolChange, handleSizeChange]);
+  }, [handleToolChange, handleSizeChange, handleUndo, handleRedo]);
 
   return (
     <main className={styles.main}>

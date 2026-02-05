@@ -27,7 +27,7 @@ export class DrawingEngine {
 
     // Advanced smoothing with Catmull-Rom splines
     private points: Point[] = [];
-    private readonly minDistance = 2; // Minimum distance between points
+    private readonly minDistance = 1.5; // Minimum distance between points for smoother curves
 
     // Callbacks
     private onStrokeStart?: (stroke: Stroke) => void;

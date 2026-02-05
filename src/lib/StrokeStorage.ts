@@ -26,6 +26,15 @@ class StrokeStorage {
         this.strokes.set(stroke.id, stroke);
     }
 
+    // Delete a stroke
+    deleteStroke(strokeId: string): boolean {
+        const deleted = this.strokes.delete(strokeId);
+        if (deleted) {
+            console.log('[StrokeStorage] Deleted stroke:', strokeId);
+        }
+        return deleted;
+    }
+
     // Get a specific stroke
     getStroke(id: string): Stroke | undefined {
         return this.strokes.get(id);

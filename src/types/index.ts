@@ -19,6 +19,7 @@ export interface Point {
 export interface ServerToClientEvents {
   'stroke:new': (stroke: Stroke) => void;
   'stroke:update': (stroke: Stroke) => void;
+  'stroke:delete': (strokeId: string) => void;
   'canvas:sync': (strokes: Stroke[]) => void;
   'canvas:state': (state: { startTime: number; strokeCount: number; timeUntilReset: number }) => void;
   'canvas:reset': () => void;
@@ -31,6 +32,7 @@ export interface ClientToServerEvents {
   'stroke:start': (stroke: Stroke) => void;
   'stroke:update': (stroke: Stroke) => void;
   'stroke:end': (stroke: Stroke) => void;
+  'stroke:delete': (strokeId: string, userId: string) => void;
   'canvas:request-sync': () => void;
   'cursor:move': (cursor: CursorData) => void;
 }

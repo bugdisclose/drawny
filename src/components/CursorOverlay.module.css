@@ -12,12 +12,34 @@
 .cursor {
     position: absolute;
     transform: translate(-2px, -2px);
-    transition: left 0.05s linear, top 0.05s linear;
+    transition: left 0.08s ease-out, top 0.08s ease-out;
     pointer-events: none;
+    animation: cursorAppear 0.3s ease-out;
+}
+
+@keyframes cursorAppear {
+    from {
+        opacity: 0;
+        transform: translate(-2px, -2px) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-2px, -2px) scale(1);
+    }
 }
 
 .cursorSvg {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+    animation: cursorFloat 2s ease-in-out infinite;
+}
+
+@keyframes cursorFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
 }
 
 .cursorRing {
@@ -33,19 +55,32 @@
 
 .cursorLabel {
     position: absolute;
-    left: 16px;
-    top: 16px;
+    left: 18px;
+    top: 18px;
     background: var(--cursor-color);
     color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
+    padding: 4px 10px;
+    border-radius: 14px;
     font-size: 11px;
     white-space: nowrap;
     font-weight: 600;
     pointer-events: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    opacity: 0.9;
-    font-family: 'Inter', sans-serif;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0.95;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    backdrop-filter: blur(4px);
+    animation: labelFade 0.3s ease-out;
+}
+
+@keyframes labelFade {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 0.95;
+        transform: translateY(0);
+    }
 }
 
 @keyframes pulse {
