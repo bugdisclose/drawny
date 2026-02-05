@@ -19,6 +19,17 @@ An anonymous, real-time, infinite collaborative drawing canvas.
 - **Styling**: CSS Modules
 - **Canvas**: HTML5 Canvas API
 
+## Deployment
+
+**Important**: This project uses a custom Node.js server (`server.ts`) for Socket.io. **It will NOT work on Vercel** or Netlify standard deployments, as they use serverless functions which cannot maintain persistent WebSocket connections.
+
+### Recommended: Render.com or Railway
+
+You must deploy to a platform that supports long-running Node.js processes.
+
+**Command**: `npm start`
+**Build Command**: `npm run build`
+
 ## Getting Started
 
 1. Install dependencies:

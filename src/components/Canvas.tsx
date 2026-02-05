@@ -321,34 +321,7 @@ export default function Canvas({
         }
     }, []);
 
-    // Handle wheel zoom
-    const handleWheel = useCallback((e: React.WheelEvent) => {
-        e.preventDefault();
 
-        const container = containerRef.current;
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-        const currentZoom = viewportRef.current.zoom;
-        const newZoom = Math.max(
-            CANVAS_CONFIG.minZoom,
-            Math.min(CANVAS_CONFIG.maxZoom, currentZoom * zoomFactor)
-        );
-
-        // Adjust viewport to zoom towards mouse position
-        const scale = newZoom / currentZoom;
-        viewportRef.current = {
-            x: mouseX + (viewportRef.current.x - mouseX) * scale,
-            y: mouseY + (viewportRef.current.y - mouseY) * scale,
-            zoom: newZoom,
-        };
-        updateTransform();
-        updateUI();
-    }, [updateTransform, updateUI]);
 
     // Reset view to center
     const resetView = useCallback(() => {
@@ -363,6 +336,39 @@ export default function Canvas({
         setViewportState(newViewport); // Immediate update for reset
     }, [updateTransform]);
 
+    // Attach non-passive wheel listener to fix scroll error
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const currentZoom = viewportRef.current.zoom;
+            const newZoom = Math.max(
+                CANVAS_CONFIG.minZoom,
+                Math.min(CANVAS_CONFIG.maxZoom, currentZoom * zoomFactor)
+            );
+
+            const scale = newZoom / currentZoom;
+            viewportRef.current = {
+                x: mouseX + (viewportRef.current.x - mouseX) * scale,
+                y: mouseY + (viewportRef.current.y - mouseY) * scale,
+                zoom: newZoom,
+            };
+            updateTransform();
+            updateUI();
+        };
+
+        container.addEventListener('wheel', onWheel, { passive: false });
+        return () => container.removeEventListener('wheel', onWheel);
+    }, [updateTransform, updateUI]);
+
     return (
         <div
             ref={containerRef}
@@ -371,7 +377,6 @@ export default function Canvas({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
-            onWheel={handleWheel}
         >
             <canvas
                 ref={canvasRef}
