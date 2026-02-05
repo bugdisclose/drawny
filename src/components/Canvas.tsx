@@ -177,6 +177,29 @@ export default function Canvas({
         };
     }, []);
 
+    // Nuclear option for iOS touch handling: prevent scrolling/gestures on container
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const preventDefault = (e: TouchEvent) => {
+            // Allow buttons to work
+            if ((e.target as HTMLElement).closest('button')) return;
+            e.preventDefault();
+        };
+
+        // Use non-passive listener to be able to prevent default
+        container.addEventListener('touchstart', preventDefault, { passive: false });
+        container.addEventListener('touchmove', preventDefault, { passive: false });
+        container.addEventListener('touchend', preventDefault, { passive: false });
+
+        return () => {
+            container.removeEventListener('touchstart', preventDefault);
+            container.removeEventListener('touchmove', preventDefault);
+            container.removeEventListener('touchend', preventDefault);
+        };
+    }, []);
+
     // Handle pointer events
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         const container = containerRef.current;
