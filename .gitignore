@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# archives
+/public/archives/*.json
+/public/archives/*.png
+

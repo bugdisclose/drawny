@@ -1,66 +1,274 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import React, { useRef, useCallback, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { DrawingEngine } from '@/lib/DrawingEngine';
+import { useSocket } from '@/hooks/useSocket';
+import { Stroke, COLORS, BrushSize, ToolType, CursorData } from '@/types';
+import Toolbar from '@/components/Toolbar';
+import CountdownTimer from '@/components/CountdownTimer';
+import ConnectionStatus from '@/components/ConnectionStatus';
+import styles from './page.module.css';
+
+// Dynamic import for Canvas to avoid SSR issues
+const Canvas = dynamic(() => import('@/components/Canvas'), {
+  ssr: false,
+  loading: () => (
+    <div className={styles.loading}>
+      <div className={styles.loadingSpinner}></div>
+      <span>Loading canvas...</span>
+    </div>
+  ),
+});
+
+// Dynamic import for CursorOverlay
+const CursorOverlay = dynamic(() => import('@/components/CursorOverlay'), { ssr: false });
+
+interface Cursor {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  lastUpdate: number;
+}
 
 export default function Home() {
+  const engineRef = useRef<DrawingEngine | null>(null);
+  const pendingStrokesRef = useRef<Stroke[] | null>(null); // Queue strokes until engine ready
+  const [engineReady, setEngineReady] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string>(COLORS[0]);
+  const [selectedSize, setSelectedSize] = useState<BrushSize>('medium');
+  const [selectedTool, setSelectedTool] = useState<ToolType>('brush');
+  const [cursors, setCursors] = useState<Map<string, Cursor>>(new Map());
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+
+  // Poll for engine availability and draw pending strokes
+  useEffect(() => {
+    const checkEngine = setInterval(() => {
+      if (engineRef.current && pendingStrokesRef.current) {
+        console.log('[page] Engine ready, drawing', pendingStrokesRef.current.length, 'pending strokes');
+        engineRef.current.clear();
+        engineRef.current.drawStrokes(pendingStrokesRef.current);
+        pendingStrokesRef.current = null;
+        setEngineReady(true);
+        clearInterval(checkEngine);
+      }
+    }, 100);
+
+    return () => clearInterval(checkEngine);
+  }, []);
+
+  // Clean up stale cursors every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCursors(prev => {
+        const now = Date.now();
+        const updated = new Map(prev);
+        for (const [id, cursor] of updated) {
+          if (now - cursor.lastUpdate > 10000) {
+            updated.delete(id);
+          }
+        }
+        return updated;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle incoming strokes from other users
+  const handleStrokeReceived = useCallback((stroke: Stroke) => {
+    if (engineRef.current) {
+      // Don't draw our own strokes (they're already drawn locally)
+      if (stroke.userId !== engineRef.current.getUserId()) {
+        engineRef.current.drawStroke(stroke);
+      }
+    }
+  }, []);
+
+  // Handle canvas sync from server
+  const handleCanvasSync = useCallback((strokes: Stroke[]) => {
+    console.log('[page] Canvas sync received with', strokes.length, 'strokes, engine ready:', !!engineRef.current);
+    if (engineRef.current) {
+      engineRef.current.clear();
+      engineRef.current.drawStrokes(strokes);
+    } else {
+      // Queue strokes for when engine is ready
+      console.log('[page] Engine not ready, queuing strokes');
+      pendingStrokesRef.current = strokes;
+    }
+  }, []);
+
+  // Handle canvas reset
+  const handleCanvasReset = useCallback(() => {
+    if (engineRef.current) {
+      engineRef.current.clear();
+    }
+    // Reset local storage timer as well
+    localStorage.setItem('drawny_canvas_start_time', Date.now().toString());
+  }, []);
+
+  // Handle cursor updates from other users
+  const handleCursorUpdate = useCallback((cursor: Cursor) => {
+    // Don't show our own cursor
+    if (engineRef.current && cursor.id !== engineRef.current.getUserId()) {
+      setCursors(prev => {
+        const updated = new Map(prev);
+        updated.set(cursor.id, cursor);
+        return updated;
+      });
+    }
+  }, []);
+
+  // Handle cursor removal
+  const handleCursorRemove = useCallback((userId: string) => {
+    setCursors(prev => {
+      const updated = new Map(prev);
+      updated.delete(userId);
+      return updated;
+    });
+  }, []);
+
+  const {
+    isConnected,
+    isOfflineMode,
+    usersCount,
+    sendStrokeStart,
+    sendStrokeUpdate,
+    sendStrokeEnd,
+    sendCursorMove,
+    reconnect,
+  } = useSocket({
+    onStrokeReceived: handleStrokeReceived,
+    onCanvasSync: handleCanvasSync,
+    onCanvasReset: handleCanvasReset,
+    onCursorUpdate: handleCursorUpdate,
+    onCursorRemove: handleCursorRemove,
+  });
+
+  // Stroke callbacks
+  const handleStrokeStart = useCallback((stroke: Stroke) => {
+    sendStrokeStart(stroke);
+  }, [sendStrokeStart]);
+
+  const handleStrokeUpdate = useCallback((stroke: Stroke) => {
+    sendStrokeUpdate(stroke);
+  }, [sendStrokeUpdate]);
+
+  const handleStrokeEnd = useCallback((stroke: Stroke) => {
+    sendStrokeEnd(stroke);
+  }, [sendStrokeEnd]);
+
+  // Handle cursor movement (throttled)
+  const lastCursorUpdate = useRef(0);
+  const handleCursorMove = useCallback((x: number, y: number) => {
+    const now = Date.now();
+    if (now - lastCursorUpdate.current < 50) return; // Throttle to 20fps
+    lastCursorUpdate.current = now;
+
+    if (engineRef.current) {
+      sendCursorMove({
+        userId: engineRef.current.getUserId(),
+        x,
+        y,
+        color: selectedColor,
+      });
+    }
+  }, [sendCursorMove, selectedColor]);
+
+  // Handle viewport changes from canvas
+  const handleViewportChange = useCallback((newViewport: { x: number; y: number; zoom: number }) => {
+    setViewport(newViewport);
+  }, []);
+
+  // Tool change handlers
+  const handleColorChange = useCallback((color: string) => {
+    setSelectedColor(color);
+    engineRef.current?.setColor(color);
+  }, []);
+
+  const handleSizeChange = useCallback((size: BrushSize) => {
+    setSelectedSize(size);
+    engineRef.current?.setBrushSize(size);
+  }, []);
+
+  const handleToolChange = useCallback((tool: ToolType) => {
+    setSelectedTool(tool);
+    engineRef.current?.setTool(tool);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'b':
+          handleToolChange('brush');
+          break;
+        case 'e':
+          handleToolChange('eraser');
+          break;
+        case '1':
+          handleSizeChange('small');
+          break;
+        case '2':
+          handleSizeChange('medium');
+          break;
+        case '3':
+          handleSizeChange('large');
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleToolChange, handleSizeChange]);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className={styles.main}>
+      {/* Connection status banner - only show when actively trying to connect */}
+      {!isOfflineMode && !isConnected && (
+        <ConnectionStatus
+          isConnected={isConnected}
+          usersCount={usersCount}
+          onRetry={reconnect}
         />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+
+      {/* Logo */}
+      <div className={styles.logo}>
+        <span className={styles.logoText}>drawny</span>
+        <span className={styles.logoTag}>collective canvas</span>
+      </div>
+
+      {/* Countdown timer */}
+      <CountdownTimer />
+
+      <Canvas
+        engineRef={engineRef}
+        onStrokeStart={handleStrokeStart}
+        onStrokeUpdate={handleStrokeUpdate}
+        onStrokeEnd={handleStrokeEnd}
+        onCursorMove={handleCursorMove}
+        onViewportChange={handleViewportChange}
+      />
+
+      {/* Remote cursors */}
+      <CursorOverlay cursors={cursors} viewport={viewport} />
+
+      <Toolbar
+        selectedColor={selectedColor}
+        selectedSize={selectedSize}
+        selectedTool={selectedTool}
+        usersCount={usersCount}
+        isConnected={isConnected}
+        onColorChange={handleColorChange}
+        onSizeChange={handleSizeChange}
+        onToolChange={handleToolChange}
+      />
+    </main>
   );
 }

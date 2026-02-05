@@ -1,0 +1,105 @@
+.container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(233, 69, 96, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+}
+
+.icon {
+    flex-shrink: 0;
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.title {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.retryButton {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.progressBar {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.progressAnimation {
+    height: 100%;
+    width: 30%;
+    background: #ffffff;
+    animation: progress 1.5s ease-in-out infinite;
+}
+
+@keyframes progress {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    50% {
+        transform: translateX(300%);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content {
+        padding: 10px 16px;
+    }
+
+    .subtitle {
+        display: none;
+    }
+}

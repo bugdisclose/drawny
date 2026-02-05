@@ -1,0 +1,252 @@
+.toolbar {
+    position: fixed;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    z-index: 1000;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.collapsed {
+    padding: 8px;
+    gap: 0;
+}
+
+.toggleButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background 0.2s ease;
+    align-self: flex-end;
+}
+
+.toggleButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.statusSection {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.connectionDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.connected {
+    background: #16c79a;
+    box-shadow: 0 0 8px #16c79a;
+}
+
+.disconnected {
+    background: #e94560;
+    box-shadow: 0 0 8px #e94560;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.usersCount {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sectionLabel {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.toolButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.toolButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    color: rgba(255, 255, 255, 0.7);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.toolButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.toolButton.selected {
+    background: rgba(233, 69, 96, 0.3);
+    border-color: #e94560;
+    color: #ffffff;
+}
+
+.colorPalette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.colorButton {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.colorButton:hover {
+    transform: scale(1.15);
+}
+
+.colorButton.selected {
+    border-color: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.sizeButtons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sizeButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    color: rgba(255, 255, 255, 0.7);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sizeButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.sizeButton.selected {
+    background: rgba(22, 199, 154, 0.3);
+    border-color: #16c79a;
+    color: #ffffff;
+}
+
+.sizeDot {
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.helpSection {
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.helpText {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        top: auto;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-width: 90vw;
+        justify-content: center;
+    }
+
+    .collapsed {
+        flex-direction: row;
+    }
+
+    .statusSection {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .section {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sectionLabel {
+        display: none;
+    }
+
+    .helpSection {
+        display: none;
+    }
+}
