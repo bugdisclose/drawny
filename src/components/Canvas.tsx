@@ -56,7 +56,7 @@ export default function Canvas({
     const isAnimatingRef = useRef(false);
 
     // Smooth animation loop - defined once and stored in ref
-    const animateViewportRef = useRef<() => void>();
+    const animateViewportRef = useRef<(() => void) | undefined>(undefined);
 
     useEffect(() => {
         animateViewportRef.current = () => {
