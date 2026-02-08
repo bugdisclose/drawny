@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import Link from 'next/link';
+import { databaseService } from '@/lib/DatabaseService';
 
 interface ArchiveStart {
     id: string;
@@ -8,30 +9,50 @@ interface ArchiveStart {
     strokeCount: number;
 }
 
-export default function GalleryPage() {
-    const archivesDir = path.join(process.cwd(), 'public', 'archives');
+export default async function GalleryPage() {
     let archives: ArchiveStart[] = [];
 
-    if (fs.existsSync(archivesDir)) {
-        const files = fs.readdirSync(archivesDir).filter(f => f.endsWith('.json'));
+    // Try to get archives from database first
+    if (databaseService.isAvailable()) {
+        console.log('[Gallery] Fetching archives from database...');
+        const dbArchives = await databaseService.getAllArchives();
 
-        archives = files.map(file => {
-            try {
-                const content = fs.readFileSync(path.join(archivesDir, file), 'utf-8');
-                const data = JSON.parse(content);
-                return {
-                    id: file.replace('.json', ''),
-                    date: data.date,
-                    strokeCount: data.strokeCount
-                };
-            } catch (e) {
-                console.error('Error parsing archive:', file, e);
-                return null;
-            }
-        }).filter(Boolean) as ArchiveStart[];
+        archives = dbArchives.map(archive => ({
+            id: archive.id,
+            date: archive.date,
+            strokeCount: archive.stroke_count
+        }));
 
-        // Sort by date descending
-        archives.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        console.log('[Gallery] Found', archives.length, 'archives in database');
+    } else {
+        console.log('[Gallery] Database not available, falling back to filesystem');
+
+        // Fallback to filesystem
+        const archivesDir = path.join(process.cwd(), 'public', 'archives');
+
+        if (fs.existsSync(archivesDir)) {
+            const files = fs.readdirSync(archivesDir).filter(f => f.endsWith('.json'));
+
+            archives = files.map(file => {
+                try {
+                    const content = fs.readFileSync(path.join(archivesDir, file), 'utf-8');
+                    const data = JSON.parse(content);
+                    return {
+                        id: file.replace('.json', ''),
+                        date: data.date,
+                        strokeCount: data.strokeCount
+                    };
+                } catch (e) {
+                    console.error('Error parsing archive:', file, e);
+                    return null;
+                }
+            }).filter(Boolean) as ArchiveStart[];
+
+            // Sort by date descending
+            archives.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+            console.log('[Gallery] Found', archives.length, 'archives in filesystem');
+        }
     }
 
     return (

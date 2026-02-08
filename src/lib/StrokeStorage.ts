@@ -1,6 +1,7 @@
 import { Stroke } from '../types';
 import fs from 'fs';
 import path from 'path';
+import { databaseService } from './DatabaseService';
 
 // In-memory stroke storage (will be replaced with Redis for production)
 class StrokeStorage {
@@ -79,7 +80,7 @@ class StrokeStorage {
     }
 
     // Archive current strokes
-    private archiveStrokes(): void {
+    private async archiveStrokes(): Promise<void> {
         if (this.strokes.size === 0) {
             console.log('[StrokeStorage] No strokes to archive, skipping');
             return;
@@ -92,33 +93,57 @@ class StrokeStorage {
         const archiveData = {
             id: timestamp,
             date: new Date().toISOString(),
-            startTime: this.canvasStartTime,
-            endTime: Date.now(),
-            strokeCount: this.strokes.size,
+            start_time: this.canvasStartTime,
+            end_time: Date.now(),
+            stroke_count: this.strokes.size,
             strokes: this.getAllStrokes()
         };
 
-        try {
-            console.log('[StrokeStorage] Archiving', this.strokes.size, 'strokes to:', filename);
-            console.log('[StrokeStorage] Archive directory:', this.archivesDir);
-            console.log('[StrokeStorage] Archive file path:', filePath);
+        console.log('[StrokeStorage] Archiving', this.strokes.size, 'strokes');
+        console.log('[StrokeStorage] Archive ID:', timestamp);
 
+        // Try to save to database first
+        let dbSaved = false;
+        if (databaseService.isAvailable()) {
+            console.log('[StrokeStorage] Attempting to save to database...');
+            dbSaved = await databaseService.saveArchive(archiveData);
+
+            if (dbSaved) {
+                console.log('[StrokeStorage] ✅ Archive saved to database successfully');
+            } else {
+                console.warn('[StrokeStorage] ⚠️  Database save failed, falling back to filesystem');
+            }
+        } else {
+            console.warn('[StrokeStorage] ⚠️  Database not available, using filesystem only');
+        }
+
+        // Always save to filesystem as backup (even if database succeeds)
+        try {
+            console.log('[StrokeStorage] Saving to filesystem:', filePath);
             fs.writeFileSync(filePath, JSON.stringify(archiveData, null, 2));
 
-            // Verify the file was created
             if (fs.existsSync(filePath)) {
                 const stats = fs.statSync(filePath);
-                console.log('[StrokeStorage] ✅ Archive created successfully:', filename, 'Size:', stats.size, 'bytes');
-            } else {
-                console.error('[StrokeStorage] ❌ Archive file not found after write!');
+                console.log('[StrokeStorage] ✅ Filesystem backup created:', filename, 'Size:', stats.size, 'bytes');
             }
         } catch (err) {
-            console.error('[StrokeStorage] ❌ Failed to archive canvas:', err);
+            console.error('[StrokeStorage] ❌ Failed to create filesystem backup:', err);
+
+            // If both database and filesystem failed, this is critical
+            if (!dbSaved) {
+                console.error('[StrokeStorage] ❌❌ CRITICAL: Archive lost - both database and filesystem failed!');
+            }
+        }
+
+        if (dbSaved) {
+            console.log('[StrokeStorage] ✅✅ Archive saved successfully (database + filesystem backup)');
+        } else {
+            console.log('[StrokeStorage] ⚠️  Archive saved to filesystem only (ephemeral)');
         }
     }
 
     // Reset the canvas
-    reset(): void {
+    async reset(): Promise<void> {
         const now = new Date();
         console.log('[StrokeStorage] ========================================');
         console.log('[StrokeStorage] 🔄 CANVAS RESET TRIGGERED');
@@ -127,7 +152,7 @@ class StrokeStorage {
         console.log('[StrokeStorage] Canvas age:', Math.floor((Date.now() - this.canvasStartTime) / 1000 / 60 / 60), 'hours');
         console.log('[StrokeStorage] ========================================');
 
-        this.archiveStrokes();
+        await this.archiveStrokes();
 
         const strokeCount = this.strokes.size;
         this.strokes.clear();

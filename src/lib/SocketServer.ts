@@ -118,9 +118,9 @@ function broadcastUsersCount(): void {
     }
 }
 
-export function resetCanvas(): void {
+export async function resetCanvas(): Promise<void> {
     if (io) {
-        strokeStorage.reset();
+        await strokeStorage.reset();
         io.emit('canvas:reset');
         // Immediately broadcast the new canvas state with updated start time
         const canvasInfo = strokeStorage.getCanvasInfo();
@@ -132,10 +132,10 @@ export function resetCanvas(): void {
 // Check for canvas reset every minute and broadcast state every 10 seconds
 function setupResetScheduler(): void {
     // Check for reset every minute
-    setInterval(() => {
+    setInterval(async () => {
         if (strokeStorage.shouldReset()) {
             console.log('[SocketServer] Canvas reset triggered by scheduler');
-            resetCanvas();
+            await resetCanvas();
         }
     }, 60 * 1000); // Check every minute
 
