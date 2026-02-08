@@ -11,13 +11,31 @@ class StrokeStorage {
 
     constructor() {
         console.log('[StrokeStorage] Initialized at:', new Date(this.canvasStartTime).toISOString());
+        console.log('[StrokeStorage] Archive directory:', this.archivesDir);
+
         // Ensure archives directory exists
         if (!fs.existsSync(this.archivesDir)) {
             try {
                 fs.mkdirSync(this.archivesDir, { recursive: true });
+                console.log('[StrokeStorage] Created archives directory');
             } catch (err) {
                 console.error('[StrokeStorage] Failed to create archives dir:', err);
             }
+        } else {
+            // List existing archives
+            try {
+                const files = fs.readdirSync(this.archivesDir);
+                console.log('[StrokeStorage] Found', files.length, 'existing archive(s)');
+            } catch (err) {
+                console.error('[StrokeStorage] Failed to read archives dir:', err);
+            }
+        }
+
+        // WARNING: On cloud platforms like Render.com, filesystem is ephemeral
+        if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+            console.warn('[StrokeStorage] ⚠️  WARNING: Running on ephemeral filesystem!');
+            console.warn('[StrokeStorage] ⚠️  Archives will be lost on server restart/redeploy');
+            console.warn('[StrokeStorage] ⚠️  Consider using persistent storage (S3, database, etc.)');
         }
     }
 
@@ -62,7 +80,10 @@ class StrokeStorage {
 
     // Archive current strokes
     private archiveStrokes(): void {
-        if (this.strokes.size === 0) return;
+        if (this.strokes.size === 0) {
+            console.log('[StrokeStorage] No strokes to archive, skipping');
+            return;
+        }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `canvas-${timestamp}.json`;
@@ -78,22 +99,42 @@ class StrokeStorage {
         };
 
         try {
+            console.log('[StrokeStorage] Archiving', this.strokes.size, 'strokes to:', filename);
+            console.log('[StrokeStorage] Archive directory:', this.archivesDir);
+            console.log('[StrokeStorage] Archive file path:', filePath);
+
             fs.writeFileSync(filePath, JSON.stringify(archiveData, null, 2));
-            console.log('[StrokeStorage] Archived canvas to:', filename);
+
+            // Verify the file was created
+            if (fs.existsSync(filePath)) {
+                const stats = fs.statSync(filePath);
+                console.log('[StrokeStorage] ✅ Archive created successfully:', filename, 'Size:', stats.size, 'bytes');
+            } else {
+                console.error('[StrokeStorage] ❌ Archive file not found after write!');
+            }
         } catch (err) {
-            console.error('[StrokeStorage] Failed to archive canvas:', err);
+            console.error('[StrokeStorage] ❌ Failed to archive canvas:', err);
         }
     }
 
     // Reset the canvas
     reset(): void {
-        console.log('[StrokeStorage] Resetting canvas...');
+        const now = new Date();
+        console.log('[StrokeStorage] ========================================');
+        console.log('[StrokeStorage] 🔄 CANVAS RESET TRIGGERED');
+        console.log('[StrokeStorage] Time:', now.toISOString());
+        console.log('[StrokeStorage] Current strokes:', this.strokes.size);
+        console.log('[StrokeStorage] Canvas age:', Math.floor((Date.now() - this.canvasStartTime) / 1000 / 60 / 60), 'hours');
+        console.log('[StrokeStorage] ========================================');
+
         this.archiveStrokes();
 
         const strokeCount = this.strokes.size;
         this.strokes.clear();
         this.canvasStartTime = Date.now();
-        console.log('[StrokeStorage] Canvas reset complete. Cleared', strokeCount, 'strokes');
+
+        console.log('[StrokeStorage] ✅ Canvas reset complete. Cleared', strokeCount, 'strokes');
+        console.log('[StrokeStorage] New canvas start time:', new Date(this.canvasStartTime).toISOString());
     }
 
     // Get canvas info
