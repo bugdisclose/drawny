@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import { createServer } from 'http';
 import next from 'next';
 import { initSocketServer } from './src/lib/SocketServer';
