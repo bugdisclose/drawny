@@ -5,12 +5,14 @@ import styles from './ConnectionStatus.module.css';
 
 interface ConnectionStatusProps {
     isConnected: boolean;
+    isConnecting?: boolean;
     usersCount: number;
     onRetry?: () => void;
 }
 
 export default function ConnectionStatus({
     isConnected,
+    isConnecting = false,
     usersCount,
     onRetry
 }: ConnectionStatusProps) {

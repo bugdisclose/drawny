@@ -46,6 +46,7 @@ export default function Home() {
     socket,
     isConnected,
     isOfflineMode,
+    isConnecting,
     usersCount,
     reconnect,
   } = useSocket({
@@ -103,7 +104,7 @@ export default function Home() {
   return (
     <main className={styles.main}>
       {/* Connection status banner - only show when actively trying to connect */}
-      {!isOfflineMode && !isConnected && (
+      {!isOfflineMode && !isConnected && !isConnecting && (
         <ConnectionStatus
           isConnected={isConnected}
           usersCount={usersCount}

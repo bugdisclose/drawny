@@ -28,6 +28,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     const [isConnected, setIsConnected] = useState(false);
     const [usersCount, setUsersCount] = useState(1);
     const [isOfflineMode, setIsOfflineMode] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(true);
     const connectionAttempted = useRef(false);
 
     const {
@@ -61,6 +62,7 @@ export function useSocket(options: UseSocketOptions = {}) {
             socketIo.on('connect', () => {
                 console.log('[useSocket] Connected to server');
                 setIsConnected(true);
+                setIsConnecting(false);
                 setIsOfflineMode(false);
                 socketIo.emit('scene:request-sync');
             });
@@ -68,16 +70,23 @@ export function useSocket(options: UseSocketOptions = {}) {
             socketIo.on('disconnect', () => {
                 console.log('[useSocket] Disconnected from server');
                 setIsConnected(false);
+                setIsConnecting(false); // Can't be connecting if we just disconnected
                 // Don't switch to offline mode immediately on disconnect, wait for timeout or error
             });
 
             socketIo.on('connect_error', (error) => {
                 console.log('[useSocket] Connection error:', error.message);
+                setIsConnecting(false);
                 // If we never connected, maybe switch to offline
                 if (!socketRef.current?.connected) {
                     setIsOfflineMode(true);
                 }
             });
+
+            // Fallback timeout to stop showing connecting state if nothing happens
+            setTimeout(() => {
+                setIsConnecting(false);
+            }, 5000);
 
             socketIo.on('scene:init', (data) => {
                 onSceneInit?.(data);
@@ -116,6 +125,7 @@ export function useSocket(options: UseSocketOptions = {}) {
             };
         } catch (error) {
             console.log('[useSocket] Failed to initialize socket', error);
+            setIsConnecting(false);
             setIsOfflineMode(true);
         }
     }, [onSceneInit, onSceneUpdate, onSceneSync, onUsersCountChange, onCursorUpdate, onCursorRemove]);
@@ -139,6 +149,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     }, []);
 
     const reconnect = useCallback(() => {
+        setIsConnecting(true); // Set connecting state when manually reconnecting
         if (socketRef.current) {
             socketRef.current.connect();
         }
@@ -147,6 +158,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     return {
         socket,
         isConnected,
+        isConnecting,
         isOfflineMode,
         usersCount,
         sendSceneUpdate,
