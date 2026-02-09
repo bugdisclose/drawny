@@ -1,40 +1,32 @@
-// Stroke data model for real-time drawing synchronization
-export interface Stroke {
-  id: string;
-  points: Point[];
-  color: string;
-  size: number;
-  tool: StrokeTool;
-  timestamp: number;
-  userId: string;
-}
+import { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types';
 
-export interface Point {
-  x: number;
-  y: number;
-  pressure?: number;
-}
+// Re-export common types
+export type { ExcalidrawElement };
 
 // Socket events for real-time communication
 export interface ServerToClientEvents {
-  'stroke:new': (stroke: Stroke) => void;
-  'stroke:update': (stroke: Stroke) => void;
-  'stroke:delete': (strokeId: string) => void;
-  'canvas:sync': (strokes: Stroke[]) => void;
-  'canvas:state': (state: { startTime: number; strokeCount: number; timeUntilReset: number }) => void;
-  'canvas:reset': () => void;
-  'users:count': (count: number) => void;
+  'scene:update': (data: SceneUpdate) => void;
+  'scene:sync': (elements: readonly ExcalidrawElement[]) => void; // Full sync
+  'scene:init': (data: SceneInitData) => void;
   'cursor:update': (cursor: CursorData) => void;
   'cursor:remove': (userId: string) => void;
+  'users:count': (count: number) => void;
 }
 
 export interface ClientToServerEvents {
-  'stroke:start': (stroke: Stroke) => void;
-  'stroke:update': (stroke: Stroke) => void;
-  'stroke:end': (stroke: Stroke) => void;
-  'stroke:delete': (strokeId: string, userId: string) => void;
-  'canvas:request-sync': () => void;
+  'scene:update': (elements: readonly ExcalidrawElement[]) => void; // Delta or full update
+  'scene:request-sync': () => void;
   'cursor:move': (cursor: CursorData) => void;
+}
+
+export interface SceneUpdate {
+  userId: string;
+  elements: readonly ExcalidrawElement[];
+}
+
+export interface SceneInitData {
+  elements: readonly ExcalidrawElement[];
+  startTime: number;
 }
 
 // Cursor data for real-time presence
@@ -43,41 +35,36 @@ export interface CursorData {
   x: number;
   y: number;
   color: string;
+  userName?: string;
 }
 
-// Drawing tool types
-export type StrokeTool = 'brush' | 'eraser';
-export type ToolType = StrokeTool | 'hand';
-
-// Predefined color palette
+// Predefined color palette (aligned with Excalidraw defaults or custom)
 export const COLORS = [
-  '#1a1a2e', // Dark Navy
-  '#e94560', // Coral Red
-  '#0f3460', // Deep Blue
-  '#16c79a', // Teal
-  '#f9ed69', // Yellow
-  '#f38181', // Salmon
-  '#aa96da', // Lavender
-  '#fcbad3', // Pink
-  '#a8d8ea', // Light Blue
-  '#ffffff', // White
+  '#000000', // Black
+  '#343a40', // Dark Gray
+  '#495057', // Gray
+  '#c92a2a', // Red
+  '#a61e4d', // Pink
+  '#862e9c', // Grape
+  '#5f3dc4', // Violet
+  '#364fc7', // Indigo
+  '#1864ab', // Blue
+  '#0b7285', // Cyan
+  '#087f5b', // Teal
+  '#2b8a3e', // Green
+  '#5c940d', // Lime
+  '#e67700', // Yellow
+  '#d9480f', // Orange
 ] as const;
 
-// Brush sizes - larger for better visibility
+// Brush sizes mapping to Excalidraw strokeWidth
 export const BRUSH_SIZES = {
-  small: 6,
-  medium: 16,
-  large: 32,
+  small: 2,
+  medium: 4,
+  large: 8,
 } as const;
+
 
 export type BrushSize = keyof typeof BRUSH_SIZES;
+export type ToolType = 'selection' | 'rectangle' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'freedraw' | 'text' | 'image' | 'eraser' | 'hand' | 'brush';
 
-// Canvas configuration
-export const CANVAS_CONFIG = {
-  width: 10000,
-  height: 10000,
-  minZoom: 0.1,
-  maxZoom: 5,
-  defaultZoom: 1,
-  resetIntervalHours: 24,
-} as const;

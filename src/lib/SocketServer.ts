@@ -1,6 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
-import { Stroke, ServerToClientEvents, ClientToServerEvents, CursorData } from '../types';
+import { ServerToClientEvents, ClientToServerEvents, CursorData } from '../types';
 import { strokeStorage } from './StrokeStorage';
 
 let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents> | null = null;
@@ -37,46 +37,38 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
         broadcastUsersCount();
 
         // Send initial canvas state immediately on connection
-        socket.emit('canvas:state', strokeStorage.getCanvasInfo());
+        const canvasState = strokeStorage.getCanvasState();
+        const visibleElements = canvasState.elements.filter(e => !e.isDeleted);
+        console.log('[SocketServer] Sending scene:init with', canvasState.elements.length, 'elements to', socket.id);
+        console.log('[SocketServer] Visible elements:', visibleElements.length, 'Deleted:', canvasState.elements.length - visibleElements.length);
+        if (canvasState.elements.length > 0) {
+            console.log('[SocketServer] First element:', canvasState.elements[0].type, 'isDeleted:', canvasState.elements[0].isDeleted);
+        }
+        socket.emit('scene:init', {
+            elements: canvasState.elements,
+            startTime: canvasState.startTime
+        });
 
-        // Handle canvas sync request
-        socket.on('canvas:request-sync', () => {
+        // Handle canvas sync request (full sync)
+        socket.on('scene:request-sync', () => {
             console.log('[SocketServer] Canvas sync requested by:', socket.id);
-            const strokes = strokeStorage.getAllStrokes();
-            socket.emit('canvas:sync', strokes);
-            socket.emit('canvas:state', strokeStorage.getCanvasInfo());
+            const elements = strokeStorage.getAllElements();
+            socket.emit('scene:sync', elements);
         });
 
-        // Handle new stroke
-        socket.on('stroke:start', (stroke: Stroke) => {
-            console.log('[SocketServer] Stroke started:', stroke.id);
-            strokeStorage.addStroke(stroke);
-            socket.broadcast.emit('stroke:new', stroke);
-        });
+        // Handle scene updates (incremental or batch)
+        socket.on('scene:update', (elements) => {
+            if (elements && Array.isArray(elements)) {
+                console.log('[SocketServer] Received scene:update from', socket.id, 'with', elements.length, 'elements');
+                // Update storage
+                strokeStorage.updateElements(elements);
+                console.log('[SocketServer] Storage now has', strokeStorage.getAllElements().length, 'total elements');
 
-        // Handle stroke update
-        socket.on('stroke:update', (stroke: Stroke) => {
-            strokeStorage.addStroke(stroke);
-            socket.broadcast.emit('stroke:update', stroke);
-        });
-
-        // Handle stroke end
-        socket.on('stroke:end', (stroke: Stroke) => {
-            console.log('[SocketServer] Stroke ended:', stroke.id);
-            strokeStorage.addStroke(stroke);
-            socket.broadcast.emit('stroke:new', stroke);
-        });
-
-        // Handle stroke deletion (for undo)
-        socket.on('stroke:delete', (strokeId: string, userId: string) => {
-            const stroke = strokeStorage.getStroke(strokeId);
-            // Only allow users to delete their own strokes
-            if (stroke && stroke.userId === userId) {
-                strokeStorage.deleteStroke(strokeId);
-                io?.emit('stroke:delete', strokeId);
-                console.log('[SocketServer] Stroke deleted:', strokeId, 'by user:', userId);
-            } else {
-                console.log('[SocketServer] Unauthorized stroke deletion attempt:', strokeId, 'by user:', userId);
+                // Broadcast to other clients (exclude sender)
+                socket.broadcast.emit('scene:update', {
+                    userId: socket.id,
+                    elements: elements
+                });
             }
         });
 
@@ -102,52 +94,46 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
         });
     });
 
-
-
     // Set up canvas reset scheduler
     setupResetScheduler();
 
     console.log('[SocketServer] Handlers attached successfully');
 }
 
-function broadcastUsersCount(): void {
+function broadcastUsersCount() {
     if (io) {
-        const count = io.sockets.sockets.size;
+        const count = io.engine.clientsCount;
         io.emit('users:count', count);
         console.log('[SocketServer] Broadcasting users count:', count);
     }
 }
 
-export async function resetCanvas(): Promise<void> {
+export function resetCanvas(): void {
     if (io) {
-        await strokeStorage.reset();
-        io.emit('canvas:reset');
-        // Immediately broadcast the new canvas state with updated start time
-        const canvasInfo = strokeStorage.getCanvasInfo();
-        io.emit('canvas:state', canvasInfo);
-        console.log('[SocketServer] Canvas reset broadcast with new state:', canvasInfo);
+        strokeStorage.reset();
+        // We reuse scene:init logic or add specific reset event
+        // But for compatibility let's just send empty sync + init
+        const canvasState = strokeStorage.getCanvasState();
+        io.emit('scene:init', {
+            elements: canvasState.elements,
+            startTime: canvasState.startTime
+        });
+        console.log('[SocketServer] Canvas reset broadcast');
     }
 }
 
-// Check for canvas reset every minute and broadcast state every 10 seconds
+// Check for canvas reset and broadcast state
 function setupResetScheduler(): void {
     // Check for reset every minute
-    setInterval(async () => {
+    setInterval(() => {
         if (strokeStorage.shouldReset()) {
             console.log('[SocketServer] Canvas reset triggered by scheduler');
-            await resetCanvas();
+            resetCanvas();
         }
     }, 60 * 1000); // Check every minute
 
-    // Broadcast canvas state to all clients every 10 seconds
-    setInterval(() => {
-        if (io) {
-            const canvasInfo = strokeStorage.getCanvasInfo();
-            io.emit('canvas:state', canvasInfo);
-        }
-    }, 10 * 1000); // Broadcast every 10 seconds
-
-    console.log('[SocketServer] Reset scheduler and state broadcaster initialized');
+    // We don't perform periodic broadcast for Excalidraw as it relies on event sourcing
+    // But we could strictly sync clock
 }
 
 export function getSocketServer(): SocketIOServer | null {

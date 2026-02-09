@@ -1,0 +1,16 @@
+/* Hide Excalidraw specific UI elements to use our custom toolbar */
+
+.excalidrawWrapper :global(.App-menu_top),
+.excalidrawWrapper :global(.App-bottom-bar),
+.excalidrawWrapper :global(.layer-ui__wrapper),
+.excalidrawWrapper :global(.Stack),
+.excalidrawWrapper :global(.island) {
+    display: none !important;
+}
+
+/* Ensure canvas takes full height/width without scrollbars */
+.excalidrawWrapper {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}

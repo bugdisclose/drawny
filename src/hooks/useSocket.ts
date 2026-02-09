@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Stroke, ServerToClientEvents, ClientToServerEvents, CursorData } from '@/types';
+import { ServerToClientEvents, ClientToServerEvents, ExcalidrawElement, SceneUpdate, SceneInitData, CursorData } from '@/types';
 
 interface Cursor {
     id: string;
@@ -10,14 +10,13 @@ interface Cursor {
     y: number;
     color: string;
     lastUpdate: number;
+    userName?: string;
 }
 
 interface UseSocketOptions {
-    onStrokeReceived?: (stroke: Stroke) => void;
-    onStrokeDeleted?: (strokeId: string) => void;
-    onCanvasSync?: (strokes: Stroke[]) => void;
-    onCanvasState?: (state: { startTime: number; strokeCount: number; timeUntilReset: number }) => void;
-    onCanvasReset?: () => void;
+    onSceneInit?: (data: SceneInitData) => void;
+    onSceneUpdate?: (data: SceneUpdate) => void;
+    onSceneSync?: (elements: readonly ExcalidrawElement[]) => void;
     onUsersCountChange?: (count: number) => void;
     onCursorUpdate?: (cursor: Cursor) => void;
     onCursorRemove?: (userId: string) => void;
@@ -25,31 +24,29 @@ interface UseSocketOptions {
 
 export function useSocket(options: UseSocketOptions = {}) {
     const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
-    const [isConnected, setIsConnected] = useState(true); // Default to true for offline-first
-    const [usersCount, setUsersCount] = useState(1); // At least the current user
-    const [isOfflineMode, setIsOfflineMode] = useState(true); // Start in offline mode
+    const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [usersCount, setUsersCount] = useState(1);
+    const [isOfflineMode, setIsOfflineMode] = useState(false);
     const connectionAttempted = useRef(false);
 
     const {
-        onStrokeReceived,
-        onStrokeDeleted,
-        onCanvasSync,
-        onCanvasState,
-        onCanvasReset,
+        onSceneInit,
+        onSceneUpdate,
+        onSceneSync,
         onUsersCountChange,
         onCursorUpdate,
         onCursorRemove
     } = options;
 
     useEffect(() => {
-        // Only attempt connection once
         if (connectionAttempted.current) return;
         connectionAttempted.current = true;
 
         console.log('[useSocket] Attempting socket connection...');
 
         try {
-            const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({
+            const socketIo: Socket<ServerToClientEvents, ClientToServerEvents> = io({
                 transports: ['websocket', 'polling'],
                 reconnection: true,
                 reconnectionAttempts: 5,
@@ -58,109 +55,74 @@ export function useSocket(options: UseSocketOptions = {}) {
                 autoConnect: true,
             });
 
-            socketRef.current = socket;
+            socketRef.current = socketIo;
+            setSocket(socketIo);
 
-            socket.on('connect', () => {
+            socketIo.on('connect', () => {
                 console.log('[useSocket] Connected to server');
                 setIsConnected(true);
                 setIsOfflineMode(false);
-                socket.emit('canvas:request-sync');
+                socketIo.emit('scene:request-sync');
             });
 
-            socket.on('disconnect', () => {
+            socketIo.on('disconnect', () => {
                 console.log('[useSocket] Disconnected from server');
-                // Don't show as disconnected, just switch to offline mode
-                setIsOfflineMode(true);
+                setIsConnected(false);
+                // Don't switch to offline mode immediately on disconnect, wait for timeout or error
             });
 
-            socket.on('connect_error', (error) => {
-                console.log('[useSocket] Connection error (switching to offline mode):', error.message);
-                setIsOfflineMode(true);
-                setIsConnected(true); // Keep showing as "connected" in offline mode
+            socketIo.on('connect_error', (error) => {
+                console.log('[useSocket] Connection error:', error.message);
+                // If we never connected, maybe switch to offline
+                if (!socketRef.current?.connected) {
+                    setIsOfflineMode(true);
+                }
             });
 
-            socket.on('stroke:new', (stroke) => {
-                onStrokeReceived?.(stroke);
+            socketIo.on('scene:init', (data) => {
+                onSceneInit?.(data);
             });
 
-            socket.on('stroke:update', (stroke) => {
-                onStrokeReceived?.(stroke);
+            socketIo.on('scene:update', (data) => {
+                onSceneUpdate?.(data);
             });
 
-            socket.on('stroke:delete', (strokeId) => {
-                console.log('[useSocket] Stroke deleted:', strokeId);
-                onStrokeDeleted?.(strokeId);
+            socketIo.on('scene:sync', (elements) => {
+                onSceneSync?.(elements);
             });
 
-            socket.on('canvas:sync', (strokes) => {
-                console.log('[useSocket] Canvas sync received:', strokes.length, 'strokes');
-                onCanvasSync?.(strokes);
-            });
-
-            socket.on('canvas:state', (state) => {
-                onCanvasState?.(state);
-            });
-
-            socket.on('canvas:reset', () => {
-                console.log('[useSocket] Canvas reset received');
-                onCanvasReset?.();
-            });
-
-            socket.on('users:count', (count) => {
+            socketIo.on('users:count', (count) => {
                 setUsersCount(count);
                 onUsersCountChange?.(count);
             });
 
-            socket.on('cursor:update', (cursor: CursorData) => {
+            socketIo.on('cursor:update', (cursor: CursorData) => {
                 onCursorUpdate?.({
                     id: cursor.userId,
                     x: cursor.x,
                     y: cursor.y,
                     color: cursor.color,
                     lastUpdate: Date.now(),
+                    userName: cursor.userName
                 });
             });
 
-            socket.on('cursor:remove', (userId: string) => {
+            socketIo.on('cursor:remove', (userId: string) => {
                 onCursorRemove?.(userId);
             });
 
-            // Set a timeout to switch to offline mode if connection doesn't happen
-            const timeout = setTimeout(() => {
-                if (!socket.connected) {
-                    console.log('[useSocket] Connection timeout, switching to offline mode');
-                    setIsOfflineMode(true);
-                    setIsConnected(true);
-                }
-            }, 3000);
-
             return () => {
-                clearTimeout(timeout);
-                socket.disconnect();
+                socketIo.disconnect();
             };
         } catch (error) {
-            console.log('[useSocket] Failed to initialize socket, using offline mode');
+            console.log('[useSocket] Failed to initialize socket', error);
             setIsOfflineMode(true);
-            setIsConnected(true);
         }
-    }, [onStrokeReceived, onStrokeDeleted, onCanvasSync, onCanvasState, onCanvasReset, onUsersCountChange, onCursorUpdate, onCursorRemove]);
+    }, [onSceneInit, onSceneUpdate, onSceneSync, onUsersCountChange, onCursorUpdate, onCursorRemove]);
 
-    const sendStrokeStart = useCallback((stroke: Stroke) => {
+    const sendSceneUpdate = useCallback((elements: readonly ExcalidrawElement[]) => {
         if (socketRef.current?.connected) {
-            socketRef.current.emit('stroke:start', stroke);
-        }
-        // Drawing still works locally even if not connected
-    }, []);
-
-    const sendStrokeUpdate = useCallback((stroke: Stroke) => {
-        if (socketRef.current?.connected) {
-            socketRef.current.emit('stroke:update', stroke);
-        }
-    }, []);
-
-    const sendStrokeEnd = useCallback((stroke: Stroke) => {
-        if (socketRef.current?.connected) {
-            socketRef.current.emit('stroke:end', stroke);
+            socketRef.current.emit('scene:update', elements);
         }
     }, []);
 
@@ -170,15 +132,9 @@ export function useSocket(options: UseSocketOptions = {}) {
         }
     }, []);
 
-    const sendStrokeDelete = useCallback((strokeId: string, userId: string) => {
-        if (socketRef.current?.connected) {
-            socketRef.current.emit('stroke:delete', strokeId, userId);
-        }
-    }, []);
-
     const requestSync = useCallback(() => {
         if (socketRef.current?.connected) {
-            socketRef.current.emit('canvas:request-sync');
+            socketRef.current.emit('scene:request-sync');
         }
     }, []);
 
@@ -189,13 +145,11 @@ export function useSocket(options: UseSocketOptions = {}) {
     }, []);
 
     return {
+        socket,
         isConnected,
         isOfflineMode,
         usersCount,
-        sendStrokeStart,
-        sendStrokeUpdate,
-        sendStrokeEnd,
-        sendStrokeDelete,
+        sendSceneUpdate,
         sendCursorMove,
         requestSync,
         reconnect,
