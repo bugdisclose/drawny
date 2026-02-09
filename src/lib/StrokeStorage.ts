@@ -123,5 +123,22 @@ class StrokeStorage {
     }
 }
 
-// Singleton instance
-export const strokeStorage = new StrokeStorage();
+// Singleton instance with global persistence for development/HMR
+const globalForStrokeStorage = globalThis as unknown as {
+    strokeStorage: StrokeStorage | undefined;
+};
+
+export const strokeStorage = globalForStrokeStorage.strokeStorage ?? new StrokeStorage();
+
+if (process.env.NODE_ENV !== 'production') {
+    globalForStrokeStorage.strokeStorage = strokeStorage;
+} else {
+    // Even in production, if we're in a custom server setup where Next.js might be
+    // re-instantiating modules or running in a way that separates instances,
+    // we want to ensure we use the same one if possible.
+    // However, usually module caching handles this. The multiple initializations might be
+    // due to Next.js build vs runtime or server components vs API routes separation.
+    // Let's try to enforce global singleton even in production for this specific use case
+    // where we MUST share state between the custom server (socket.io) and Next.js handlers.
+    globalForStrokeStorage.strokeStorage = strokeStorage;
+}
