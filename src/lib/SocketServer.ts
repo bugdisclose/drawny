@@ -108,9 +108,9 @@ function broadcastUsersCount() {
     }
 }
 
-export async function resetCanvas(): Promise<void> {
+export async function resetCanvas(): Promise<any> {
     if (io) {
-        await strokeStorage.reset();
+        const result = await strokeStorage.reset();
         // We reuse scene:init logic or add specific reset event
         // But for compatibility let's just send empty sync + init
         const canvasState = strokeStorage.getCanvasState();
@@ -119,7 +119,9 @@ export async function resetCanvas(): Promise<void> {
             startTime: canvasState.startTime
         });
         console.log('[SocketServer] Canvas reset broadcast');
+        return result;
     }
+    return { success: false, reason: 'SocketIO not initialized' };
 }
 
 // Check for canvas reset and broadcast state

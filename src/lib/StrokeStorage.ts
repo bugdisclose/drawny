@@ -44,8 +44,10 @@ class StrokeStorage {
     }
 
     // Archive current canvas
-    private async archiveStrokes(): Promise<void> {
-        if (this.elements.size === 0) return;
+    private async archiveStrokes(): Promise<{ success: boolean; reason?: string; archiveId?: string }> {
+        if (this.elements.size === 0) {
+            return { success: false, reason: 'No strokes to archive (count is 0)' };
+        }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `canvas-${timestamp}.json`;
@@ -57,7 +59,7 @@ class StrokeStorage {
             start_time: this.canvasStartTime,
             end_time: Date.now(),
             stroke_count: this.elements.size,
-            strokes: this.getAllElements() as any // Cast to any to match DB expected type if needed, or update types
+            strokes: this.getAllElements() as any
         };
 
         // 1. Save to local filesystem (backup/dev)
@@ -71,6 +73,7 @@ class StrokeStorage {
         // 2. Save to Database (Persistent)
         if (databaseService.isAvailable()) {
             try {
+                console.log('[StrokeStorage] Attempting to save archive to DB:', archiveData.id);
                 const saved = await databaseService.saveArchive({
                     id: archiveData.id,
                     date: archiveData.date,
@@ -82,33 +85,41 @@ class StrokeStorage {
 
                 if (saved) {
                     console.log('[StrokeStorage] ✅ Archived canvas to Database:', archiveData.id);
+                    return { success: true, archiveId: archiveData.id };
                 } else {
                     console.warn('[StrokeStorage] ⚠️ Failed to save archive to Database (saveArchive returned false)');
+                    return { success: false, reason: 'Database saveArchive returned false' };
                 }
             } catch (err) {
                 console.error('[StrokeStorage] ❌ Error saving to Database:', err);
+                return { success: false, reason: `Database error: ${err instanceof Error ? err.message : String(err)}` };
             }
         } else {
             console.warn('[StrokeStorage] ⚠️ Database not available, skipping DB archival');
+            // If local save worked, we might consider it partial success, but for PROD we want DB.
+            return { success: false, reason: 'Database not available' };
         }
     }
 
     // Reset the canvas
-    async reset(): Promise<void> {
+    async reset(): Promise<{ success: boolean; result?: any }> {
         console.log('[StrokeStorage] Resetting canvas...');
+        let archiveResult;
 
         try {
-            await this.archiveStrokes();
+            archiveResult = await this.archiveStrokes();
+            console.log('[StrokeStorage] Archive result:', archiveResult);
         } catch (err) {
             console.error('[StrokeStorage] Error during archival in reset:', err);
-            // We continue to clear elements even if archival fails to prevent stale state loop,
-            // but we log the error.
+            archiveResult = { success: false, reason: `Unexpected error: ${err}` };
         }
 
         const count = this.elements.size;
         this.elements.clear();
         this.canvasStartTime = Date.now();
         console.log('[StrokeStorage] Canvas reset complete. Cleared', count, 'elements');
+
+        return { success: true, result: archiveResult };
     }
 
     // Get initial canvas state data

@@ -6,13 +6,14 @@ import { resetCanvas } from '@/lib/SocketServer';
 export async function POST() {
     try {
         console.log('[Test API] Manual canvas reset triggered');
-        
+
         // Trigger the canvas reset which will archive current strokes
-        await resetCanvas();
-        
+        const result = await resetCanvas();
+
         return NextResponse.json({
-            success: true,
-            message: 'Canvas reset and archive created successfully',
+            success: result?.success ?? true,
+            message: 'Canvas reset triggered',
+            result: result,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
