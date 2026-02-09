@@ -94,9 +94,16 @@ class StrokeStorage {
     }
 
     // Reset the canvas
-    reset(): void {
+    async reset(): Promise<void> {
         console.log('[StrokeStorage] Resetting canvas...');
-        this.archiveStrokes();
+
+        try {
+            await this.archiveStrokes();
+        } catch (err) {
+            console.error('[StrokeStorage] Error during archival in reset:', err);
+            // We continue to clear elements even if archival fails to prevent stale state loop,
+            // but we log the error.
+        }
 
         const count = this.elements.size;
         this.elements.clear();

@@ -108,9 +108,9 @@ function broadcastUsersCount() {
     }
 }
 
-export function resetCanvas(): void {
+export async function resetCanvas(): Promise<void> {
     if (io) {
-        strokeStorage.reset();
+        await strokeStorage.reset();
         // We reuse scene:init logic or add specific reset event
         // But for compatibility let's just send empty sync + init
         const canvasState = strokeStorage.getCanvasState();
@@ -128,7 +128,7 @@ function setupResetScheduler(): void {
     setInterval(() => {
         if (strokeStorage.shouldReset()) {
             console.log('[SocketServer] Canvas reset triggered by scheduler');
-            resetCanvas();
+            resetCanvas().catch(err => console.error('[SocketServer] Error in scheduled reset:', err));
         }
     }, 60 * 1000); // Check every minute
 
