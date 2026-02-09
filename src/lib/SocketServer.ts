@@ -109,8 +109,20 @@ function broadcastUsersCount() {
 }
 
 export async function resetCanvas(): Promise<any> {
+    // Always attempt to reset storage (archive + clear)
+    // This allows API routes to trigger archival even if they don't have access to the 'io' instance
+    // (which might happen due to module isolation in Next.js)
+    console.log('[SocketServer] resetCanvas triggered. IO available:', !!io);
+
+    let result;
+    try {
+        result = await strokeStorage.reset();
+    } catch (err) {
+        console.error('[SocketServer] Error resetting storage:', err);
+        return { success: false, reason: `Storage reset failed: ${err}` };
+    }
+
     if (io) {
-        const result = await strokeStorage.reset();
         // We reuse scene:init logic or add specific reset event
         // But for compatibility let's just send empty sync + init
         const canvasState = strokeStorage.getCanvasState();
@@ -118,10 +130,12 @@ export async function resetCanvas(): Promise<any> {
             elements: canvasState.elements,
             startTime: canvasState.startTime
         });
-        console.log('[SocketServer] Canvas reset broadcast');
-        return result;
+        console.log('[SocketServer] Canvas reset broadcast to clients');
+    } else {
+        console.warn('[SocketServer] IO not available, skipping broadcast');
     }
-    return { success: false, reason: 'SocketIO not initialized' };
+
+    return result;
 }
 
 // Check for canvas reset and broadcast state
