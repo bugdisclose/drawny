@@ -3,10 +3,11 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Socket } from 'socket.io-client';
-import { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types';
-import { AppState, BinaryFiles } from '@excalidraw/excalidraw/types/types';
-import { ToolType, BrushSize, SimpleColor, ServerToClientEvents, ClientToServerEvents } from '@/types';
-import '@excalidraw/excalidraw/index.css';
+import { ToolType, BrushSize, SimpleColor, ServerToClientEvents, ClientToServerEvents, ExcalidrawElement } from '@/types';
+
+// These types are used by Excalidraw API but we define minimally here
+type AppState = Record<string, unknown>;
+type BinaryFiles = Record<string, unknown>;
 
 import styles from './ExcalidrawCanvas.module.css';
 
@@ -346,7 +347,7 @@ export default function ExcalidrawCanvas({
                 key={excalidrawKey} // Force remount when initial data changes
                 excalidrawAPI={(api) => setExcalidrawAPI(api)}
                 initialData={{
-                    elements: initialElements || [],
+                    elements: (initialElements || []) as any,
                     appState: {
                         viewBackgroundColor: '#ffffff',
                         currentItemStrokeColor: activeColor,
@@ -354,7 +355,7 @@ export default function ExcalidrawCanvas({
                     }
                 }}
                 onPointerUpdate={onPointerUpdate}
-                onChange={onChange}
+                onChange={onChange as any}
                 viewModeEnabled={activeTool === 'hand'}
                 zenModeEnabled={false} // We handle UI hiding via CSS
                 gridModeEnabled={false}

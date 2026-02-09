@@ -160,7 +160,7 @@ export class DrawingEngine {
 
         // Pressure-sensitive width
         const avgPressure = ((p1.pressure || 1) + (p2.pressure || 1)) / 2;
-        this.ctx.lineWidth = stroke.size * avgPressure;
+        this.ctx.lineWidth = (stroke.size || 4) * avgPressure;
 
         // Always use source-over for now (eraser paints white)
         this.ctx.globalCompositeOperation = 'source-over';
@@ -191,7 +191,7 @@ export class DrawingEngine {
         // Always use source-over
         this.ctx.globalCompositeOperation = 'source-over';
 
-        const radius = (stroke.size * (point.pressure || 1)) / 2;
+        const radius = ((stroke.size || 4) * (point.pressure || 1)) / 2;
         this.ctx.arc(point.x, point.y, Math.max(1, radius), 0, Math.PI * 2);
         this.ctx.fillStyle = stroke.color;
         this.ctx.fill();
@@ -230,7 +230,7 @@ export class DrawingEngine {
 
         this.ctx.beginPath();
         this.ctx.strokeStyle = stroke.color;
-        this.ctx.lineWidth = stroke.size;
+        this.ctx.lineWidth = stroke.size || 4;
 
         // Always use source-over
         this.ctx.globalCompositeOperation = 'source-over';

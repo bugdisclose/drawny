@@ -1,7 +1,15 @@
-import { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types';
-
-// Re-export common types
-export type { ExcalidrawElement };
+// Local type definition for Excalidraw elements (compatible with Excalidraw's internal type)
+export interface ExcalidrawElement {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  version: number;
+  isDeleted?: boolean;
+  [key: string]: unknown;
+}
 
 // Socket events for real-time communication
 export interface ServerToClientEvents {
@@ -68,3 +76,30 @@ export const BRUSH_SIZES = {
 export type BrushSize = keyof typeof BRUSH_SIZES;
 export type ToolType = 'selection' | 'rectangle' | 'diamond' | 'ellipse' | 'arrow' | 'line' | 'freedraw' | 'text' | 'image' | 'eraser' | 'hand' | 'brush';
 
+// Legacy types used by Canvas.tsx and DrawingEngine.ts
+export const CANVAS_CONFIG = {
+  width: 4000,
+  height: 4000,
+  minZoom: 0.25,
+  maxZoom: 3,
+} as const;
+
+export interface Point {
+  x: number;
+  y: number;
+  pressure?: number;
+}
+
+export interface Stroke {
+  id: string;
+  points: Point[];
+  color: string;
+  width?: number;
+  size?: number;
+  tool: StrokeTool;
+  userId?: string;
+  timestamp?: number;
+}
+
+export type StrokeTool = 'brush' | 'eraser';
+export type SimpleColor = string;
