@@ -1,6 +1,7 @@
 import { ExcalidrawElement } from '../types';
 import fs from 'fs';
 import path from 'path';
+import { databaseService } from './DatabaseService';
 
 // In-memory element storage
 class StrokeStorage {
@@ -43,7 +44,7 @@ class StrokeStorage {
     }
 
     // Archive current canvas
-    private archiveStrokes(): void {
+    private async archiveStrokes(): Promise<void> {
         if (this.elements.size === 0) return;
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -53,17 +54,42 @@ class StrokeStorage {
         const archiveData = {
             id: timestamp,
             date: new Date().toISOString(),
-            startTime: this.canvasStartTime,
-            endTime: Date.now(),
-            elementCount: this.elements.size,
-            elements: this.getAllElements()
+            start_time: this.canvasStartTime,
+            end_time: Date.now(),
+            stroke_count: this.elements.size,
+            strokes: this.getAllElements() as any // Cast to any to match DB expected type if needed, or update types
         };
 
+        // 1. Save to local filesystem (backup/dev)
         try {
             fs.writeFileSync(filePath, JSON.stringify(archiveData, null, 2));
-            console.log('[StrokeStorage] Archived canvas to:', filename);
+            console.log('[StrokeStorage] Archived canvas to local FS:', filename);
         } catch (err) {
-            console.error('[StrokeStorage] Failed to archive canvas:', err);
+            console.error('[StrokeStorage] Failed to archive canvas to FS:', err);
+        }
+
+        // 2. Save to Database (Persistent)
+        if (databaseService.isAvailable()) {
+            try {
+                const saved = await databaseService.saveArchive({
+                    id: archiveData.id,
+                    date: archiveData.date,
+                    start_time: archiveData.start_time,
+                    end_time: archiveData.end_time,
+                    stroke_count: archiveData.stroke_count,
+                    strokes: archiveData.strokes
+                });
+
+                if (saved) {
+                    console.log('[StrokeStorage] ✅ Archived canvas to Database:', archiveData.id);
+                } else {
+                    console.warn('[StrokeStorage] ⚠️ Failed to save archive to Database (saveArchive returned false)');
+                }
+            } catch (err) {
+                console.error('[StrokeStorage] ❌ Error saving to Database:', err);
+            }
+        } else {
+            console.warn('[StrokeStorage] ⚠️ Database not available, skipping DB archival');
         }
     }
 
