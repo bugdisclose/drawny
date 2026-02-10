@@ -11,6 +11,7 @@ export interface ServerToClientEvents {
   'cursor:update': (cursor: CursorData) => void;
   'cursor:remove': (userId: string) => void;
   'users:count': (count: number) => void;
+  'artists:count': (count: number) => void;
 }
 
 export interface ClientToServerEvents {
@@ -27,6 +28,7 @@ export interface SceneUpdate {
 export interface SceneInitData {
   elements: readonly ExcalidrawElement[];
   startTime: number;
+  artistCount: number;
 }
 
 // Cursor data for real-time presence

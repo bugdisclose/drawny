@@ -48,6 +48,7 @@ export default function Home() {
     isOfflineMode,
     isConnecting,
     usersCount,
+    artistCount,
     reconnect,
   } = useSocket({
     onUsersCountChange: handleUsersCountChange,
@@ -116,6 +117,13 @@ export default function Home() {
       <div className={styles.logo}>
         <span className={styles.logoText}>drawny</span>
         <span className={styles.logoTag}>Draw with strangers.</span>
+        {artistCount > 0 && (
+          <span className={styles.artistBadge}>
+            {artistCount < 10
+              ? '✨ Many people are drawing today'
+              : `🎨 ${artistCount} artists drew today`}
+          </span>
+        )}
       </div>
 
       {/* Header Actions */}

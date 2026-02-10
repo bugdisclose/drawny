@@ -7,6 +7,7 @@ interface ArchiveStart {
     id: string;
     date: string;
     strokeCount: number;
+    artistCount: number;
 }
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +24,8 @@ export default async function GalleryPage() {
         archives = dbArchives.map(archive => ({
             id: archive.id,
             date: archive.date,
-            strokeCount: archive.stroke_count
+            strokeCount: archive.stroke_count,
+            artistCount: archive.artist_count ?? 0
         }));
 
         console.log('[Gallery] Found', archives.length, 'archives in database');
@@ -43,7 +45,8 @@ export default async function GalleryPage() {
                     return {
                         id: file.replace('.json', ''),
                         date: data.date,
-                        strokeCount: data.strokeCount
+                        strokeCount: data.strokeCount ?? data.stroke_count ?? 0,
+                        artistCount: data.artist_count ?? 0
                     };
                 } catch (e) {
                     console.error('Error parsing archive:', file, e);
@@ -129,6 +132,11 @@ export default async function GalleryPage() {
                                             <span>🖌️ {archive.strokeCount} strokes</span>
                                             <span>🕒 {new Date(archive.date).toLocaleTimeString()}</span>
                                         </div>
+                                        {archive.artistCount > 0 && (
+                                            <div style={{ marginTop: '8px', fontSize: '13px', color: '#888', fontStyle: 'italic' }}>
+                                                This canvas was drawn by {archive.artistCount} {archive.artistCount === 1 ? 'person' : 'people'}.
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </Link>

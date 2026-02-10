@@ -49,6 +49,34 @@
   margin-top: -4px;
 }
 
+.artistBadge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(26, 26, 46, 0.65);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  letter-spacing: 0.3px;
+  animation: fadeIn 0.6s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Loading state */
 .loading {
   width: 100vw;

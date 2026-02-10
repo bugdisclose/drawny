@@ -27,6 +27,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [usersCount, setUsersCount] = useState(1);
+    const [artistCount, setArtistCount] = useState(0);
     const [isOfflineMode, setIsOfflineMode] = useState(false);
     const [isConnecting, setIsConnecting] = useState(true);
     const connectionAttempted = useRef(false);
@@ -90,6 +91,9 @@ export function useSocket(options: UseSocketOptions = {}) {
 
             socketIo.on('scene:init', (data) => {
                 onSceneInit?.(data);
+                if (typeof data.artistCount === 'number') {
+                    setArtistCount(data.artistCount);
+                }
             });
 
             socketIo.on('scene:update', (data) => {
@@ -103,6 +107,10 @@ export function useSocket(options: UseSocketOptions = {}) {
             socketIo.on('users:count', (count) => {
                 setUsersCount(count);
                 onUsersCountChange?.(count);
+            });
+
+            socketIo.on('artists:count', (count) => {
+                setArtistCount(count);
             });
 
             socketIo.on('cursor:update', (cursor: CursorData) => {
@@ -161,6 +169,7 @@ export function useSocket(options: UseSocketOptions = {}) {
         isConnecting,
         isOfflineMode,
         usersCount,
+        artistCount,
         sendSceneUpdate,
         sendCursorMove,
         requestSync,

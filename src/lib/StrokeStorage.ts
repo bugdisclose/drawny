@@ -7,6 +7,7 @@ import { databaseService } from './DatabaseService';
 class StrokeStorage {
     private elements: Map<string, ExcalidrawElement> = new Map();
     private canvasStartTime: number = Date.now();
+    private uniqueArtists: Set<string> = new Set();
     private readonly resetIntervalMs = 24 * 60 * 60 * 1000; // 24 hours
     private readonly archivesDir = path.join(process.cwd(), 'public', 'archives');
 
@@ -26,6 +27,22 @@ class StrokeStorage {
         elements.forEach(element => {
             this.elements.set(element.id, element);
         });
+    }
+
+    // Mark a session as having drawn at least one stroke
+    // Returns true if this is a NEW unique artist (first stroke in this cycle)
+    markSessionAsDrawn(sessionId: string): boolean {
+        if (this.uniqueArtists.has(sessionId)) {
+            return false;
+        }
+        this.uniqueArtists.add(sessionId);
+        console.log('[StrokeStorage] New unique artist:', sessionId, '| Total unique artists:', this.uniqueArtists.size);
+        return true;
+    }
+
+    // Get number of unique artists who drew in this cycle
+    getUniqueArtistCount(): number {
+        return this.uniqueArtists.size;
     }
 
     // Get all elements
@@ -59,6 +76,7 @@ class StrokeStorage {
             start_time: this.canvasStartTime,
             end_time: Date.now(),
             stroke_count: this.elements.size,
+            artist_count: this.uniqueArtists.size,
             strokes: this.getAllElements() as any
         };
 
@@ -80,6 +98,7 @@ class StrokeStorage {
                     start_time: archiveData.start_time,
                     end_time: archiveData.end_time,
                     stroke_count: archiveData.stroke_count,
+                    artist_count: archiveData.artist_count,
                     strokes: archiveData.strokes
                 });
 
@@ -115,9 +134,11 @@ class StrokeStorage {
         }
 
         const count = this.elements.size;
+        const artistCount = this.uniqueArtists.size;
         this.elements.clear();
+        this.uniqueArtists.clear();
         this.canvasStartTime = Date.now();
-        console.log('[StrokeStorage] Canvas reset complete. Cleared', count, 'elements');
+        console.log('[StrokeStorage] Canvas reset complete. Cleared', count, 'elements,', artistCount, 'unique artists');
 
         return { success: true, result: archiveResult };
     }
@@ -126,7 +147,8 @@ class StrokeStorage {
     getCanvasState() {
         return {
             elements: this.getAllElements(),
-            startTime: this.canvasStartTime
+            startTime: this.canvasStartTime,
+            artistCount: this.uniqueArtists.size
         };
     }
 
@@ -134,8 +156,9 @@ class StrokeStorage {
     getCanvasInfo() {
         return {
             startTime: this.canvasStartTime,
-            strokeCount: this.elements.size, // Keeping property name for compatibility if needed, else rename
+            strokeCount: this.elements.size,
             elementCount: this.elements.size,
+            artistCount: this.uniqueArtists.size,
             timeUntilReset: this.getTimeUntilReset(),
         };
     }

@@ -7,6 +7,7 @@ interface ArchiveData {
     start_time: number;
     end_time: number;
     stroke_count: number;
+    artist_count: number;
     strokes: Stroke[];
 }
 
@@ -21,7 +22,7 @@ class DatabaseService {
     private initializePool(): void {
         // Only initialize if DATABASE_URL is provided
         const databaseUrl = process.env.DATABASE_URL;
-        
+
         if (!databaseUrl) {
             console.warn('[DatabaseService] ⚠️  DATABASE_URL not set - archives will not persist');
             console.warn('[DatabaseService] ⚠️  Set DATABASE_URL environment variable to enable database storage');
@@ -55,7 +56,7 @@ class DatabaseService {
 
         try {
             const client = await this.pool.connect();
-            
+
             try {
                 // Create archives table
                 await client.query(`
@@ -73,6 +74,11 @@ class DatabaseService {
                 // Create index on date for faster queries
                 await client.query(`
                     CREATE INDEX IF NOT EXISTS idx_archives_date ON archives(date DESC);
+                `);
+
+                // Add artist_count column if it doesn't exist (migration for existing DBs)
+                await client.query(`
+                    ALTER TABLE archives ADD COLUMN IF NOT EXISTS artist_count INTEGER DEFAULT 0;
                 `);
 
                 console.log('[DatabaseService] ✅ Database tables verified/created');
@@ -93,13 +99,14 @@ class DatabaseService {
 
         try {
             await this.pool.query(
-                `INSERT INTO archives (id, date, start_time, end_time, stroke_count, strokes)
-                 VALUES ($1, $2, $3, $4, $5, $6)
+                `INSERT INTO archives (id, date, start_time, end_time, stroke_count, artist_count, strokes)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                  ON CONFLICT (id) DO UPDATE SET
                     date = EXCLUDED.date,
                     start_time = EXCLUDED.start_time,
                     end_time = EXCLUDED.end_time,
                     stroke_count = EXCLUDED.stroke_count,
+                    artist_count = EXCLUDED.artist_count,
                     strokes = EXCLUDED.strokes`,
                 [
                     archiveData.id,
@@ -107,6 +114,7 @@ class DatabaseService {
                     archiveData.start_time,
                     archiveData.end_time,
                     archiveData.stroke_count,
+                    archiveData.artist_count,
                     JSON.stringify(archiveData.strokes)
                 ]
             );
@@ -141,6 +149,7 @@ class DatabaseService {
                 start_time: row.start_time,
                 end_time: row.end_time,
                 stroke_count: row.stroke_count,
+                artist_count: row.artist_count ?? 0,
                 strokes: row.strokes
             };
         } catch (err) {
@@ -149,20 +158,21 @@ class DatabaseService {
         }
     }
 
-    async getAllArchives(): Promise<Array<{ id: string; date: string; stroke_count: number }>> {
+    async getAllArchives(): Promise<Array<{ id: string; date: string; stroke_count: number; artist_count: number }>> {
         if (!this.pool || !this.isInitialized) {
             return [];
         }
 
         try {
             const result = await this.pool.query(
-                'SELECT id, date, stroke_count FROM archives ORDER BY date DESC'
+                'SELECT id, date, stroke_count, COALESCE(artist_count, 0) as artist_count FROM archives ORDER BY date DESC'
             );
 
             return result.rows.map(row => ({
                 id: row.id,
                 date: row.date,
-                stroke_count: row.stroke_count
+                stroke_count: row.stroke_count,
+                artist_count: row.artist_count
             }));
         } catch (err) {
             console.error('[DatabaseService] ❌ Failed to get archives:', err);

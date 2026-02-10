@@ -46,7 +46,8 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
         }
         socket.emit('scene:init', {
             elements: canvasState.elements,
-            startTime: canvasState.startTime
+            startTime: canvasState.startTime,
+            artistCount: canvasState.artistCount
         });
 
         // Handle canvas sync request (full sync)
@@ -63,6 +64,12 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
                 // Update storage
                 strokeStorage.updateElements(elements);
                 console.log('[SocketServer] Storage now has', strokeStorage.getAllElements().length, 'total elements');
+
+                // Track unique artist — only broadcast when it's a NEW session
+                const isNewArtist = strokeStorage.markSessionAsDrawn(socket.id);
+                if (isNewArtist) {
+                    broadcastArtistsCount();
+                }
 
                 // Broadcast to other clients (exclude sender)
                 socket.broadcast.emit('scene:update', {
@@ -108,6 +115,14 @@ function broadcastUsersCount() {
     }
 }
 
+function broadcastArtistsCount() {
+    if (io) {
+        const count = strokeStorage.getUniqueArtistCount();
+        io.emit('artists:count', count);
+        console.log('[SocketServer] Broadcasting unique artists count:', count);
+    }
+}
+
 export async function resetCanvas(): Promise<any> {
     // Always attempt to reset storage (archive + clear)
     // This allows API routes to trigger archival even if they don't have access to the 'io' instance
@@ -128,7 +143,8 @@ export async function resetCanvas(): Promise<any> {
         const canvasState = strokeStorage.getCanvasState();
         io.emit('scene:init', {
             elements: canvasState.elements,
-            startTime: canvasState.startTime
+            startTime: canvasState.startTime,
+            artistCount: canvasState.artistCount
         });
         console.log('[SocketServer] Canvas reset broadcast to clients');
     } else {
