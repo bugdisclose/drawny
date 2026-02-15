@@ -110,13 +110,6 @@ export default function ExcalidrawCanvas({
     useEffect(() => {
         if (!excalidrawAPI) return;
 
-        // CRITICAL: Don't run this effect before initial data is loaded
-        // This prevents clearing the scene before initialData is processed
-        if (!hasInitialized.current && initialElements && initialElements.length > 0) {
-            console.log('[Excalidraw] Skipping props sync - waiting for initialization');
-            return;
-        }
-
         const strokeWidth = getStrokeWidth(activeSize);
 
         // Mark as remote update to prevent onChange from emitting
@@ -140,10 +133,11 @@ export default function ExcalidrawCanvas({
         });
 
         // Update Tool - FORCE update whenever dependencies change
-        // This ensures initial load gets the correct tool
+        // This ensures initial load gets the correct tool (brush by default)
         const tool = activeTool === 'brush' ? 'freedraw' :
             activeTool === 'eraser' ? 'eraser' : 'selection';
 
+        console.log('[Excalidraw] Setting active tool to:', tool, '(from activeTool:', activeTool + ')');
         excalidrawAPI.setActiveTool({ type: tool });
 
         // Reset flag on next tick
