@@ -9,8 +9,8 @@ import { InkManager, InkState } from '@/lib/InkManager';
 export function useInkManager() {
   const inkManagerRef = useRef<InkManager | null>(null);
   const [inkState, setInkState] = useState<InkState>({
-    current: 1000,
-    max: 1000,
+    current: 3000,
+    max: 3000,
     percentage: 100,
     canDraw: true,
   });
