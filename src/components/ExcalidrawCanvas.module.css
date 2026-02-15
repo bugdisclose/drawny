@@ -8,6 +8,17 @@
     display: none !important;
 }
 
+/* Hide help text on mobile */
+@media (max-width: 768px) {
+    .excalidrawWrapper :global(.help-icon),
+    .excalidrawWrapper :global(.HintViewer),
+    .excalidrawWrapper :global(.zen-mode-transition),
+    .excalidrawWrapper :global([class*="HintViewer"]),
+    .excalidrawWrapper :global([class*="help"]) {
+        display: none !important;
+    }
+}
+
 /* Ensure canvas takes full height/width without scrollbars */
 .excalidrawWrapper {
     height: 100vh;
