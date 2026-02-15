@@ -352,7 +352,15 @@
     line-height: 1.5;
 }
 
+.urlContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
 .previewBox code {
+    flex: 1;
     display: block;
     background: rgba(0, 0, 0, 0.05);
     padding: 8px;
@@ -361,6 +369,34 @@
     color: #666;
     word-break: break-all;
     font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.copyUrlButton {
+    background: rgba(26, 26, 46, 0.08);
+    border: 1px solid rgba(26, 26, 46, 0.15);
+    border-radius: 6px;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    color: #1a1a2e;
+}
+
+.copyUrlButton:hover {
+    background: rgba(26, 26, 46, 0.12);
+    border-color: rgba(26, 26, 46, 0.25);
+    transform: translateY(-1px);
+}
+
+.copyUrlButton:active {
+    transform: translateY(0);
+}
+
+.copyUrlButton svg {
+    display: block;
 }
 
 .modalFooter {

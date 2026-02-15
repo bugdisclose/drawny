@@ -14,6 +14,7 @@ const SHARE_TEMPLATES = [
 export default function ShareButton() {
     const [showModal, setShowModal] = useState(false);
     const [showCopied, setShowCopied] = useState(false);
+    const [showUrlCopied, setShowUrlCopied] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState(SHARE_TEMPLATES[0].id);
     const [customMessage, setCustomMessage] = useState('');
 
@@ -93,6 +94,33 @@ export default function ShareButton() {
         }
     }, []);
 
+    const copyUrlOnly = useCallback(async () => {
+        const url = window.location.href;
+        try {
+            await navigator.clipboard.writeText(url);
+            setShowUrlCopied(true);
+            setTimeout(() => setShowUrlCopied(false), 2000);
+            console.log('[Share] URL copied to clipboard');
+        } catch (error) {
+            console.error('[Share] Failed to copy URL:', error);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setShowUrlCopied(true);
+                setTimeout(() => setShowUrlCopied(false), 2000);
+            } catch (err) {
+                console.error('[Share] Fallback URL copy failed:', err);
+            }
+            document.body.removeChild(textArea);
+        }
+    }, []);
+
     return (
         <>
             <div className={styles.container}>
@@ -124,6 +152,13 @@ export default function ShareButton() {
                 {showCopied && (
                     <div className={styles.copiedNotification}>
                         ✓ Copied to clipboard!
+                    </div>
+                )}
+
+                {/* URL copied notification */}
+                {showUrlCopied && (
+                    <div className={styles.copiedNotification}>
+                        ✓ URL copied to clipboard!
                     </div>
                 )}
             </div>
@@ -178,7 +213,20 @@ export default function ShareButton() {
                             <div className={styles.previewBox}>
                                 <strong>Preview:</strong>
                                 <p>{getShareMessage()}</p>
-                                <code>{window.location.href}</code>
+                                <div className={styles.urlContainer}>
+                                    <code>{window.location.href}</code>
+                                    <button
+                                        className={styles.copyUrlButton}
+                                        onClick={copyUrlOnly}
+                                        aria-label="Copy URL only"
+                                        title="Copy URL only"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
