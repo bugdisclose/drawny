@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Socket } from 'socket.io-client';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
@@ -91,8 +91,8 @@ export default function ExcalidrawCanvas({
     // Viewport coordinates for deep linking
     const updateURLDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Parse viewport coordinates from URL hash (memoized to run only once)
-    const initialViewport = React.useMemo(() => {
+    // Parse viewport coordinates from URL hash (lazy initializer runs only on client)
+    const [initialViewport] = useState(() => {
         if (typeof window === 'undefined') return null;
 
         const hash = window.location.hash.slice(1); // Remove '#'
@@ -113,7 +113,7 @@ export default function ExcalidrawCanvas({
             return viewport;
         }
         return null;
-    }, []); // Empty deps - only run once on mount
+    }); // Lazy initializer - only runs once on client, not during SSR
 
     // Update URL hash with viewport coordinates (debounced)
     const updateURLHash = useCallback((scrollX: number, scrollY: number, zoom: number) => {
