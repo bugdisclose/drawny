@@ -185,8 +185,13 @@ export default function ExcalidrawCanvas({
 
             // Update version map for fresh sync
             latestVersionMap.current.clear();
+            elementLengthMap.current.clear();
             elements.forEach(el => {
                 latestVersionMap.current.set(el.id, el.version);
+
+                // Initialize element length map to prevent consuming ink for existing elements
+                const length = calculateElementLength(el);
+                elementLengthMap.current.set(el.id, length);
             });
 
             // Set initial elements and force Excalidraw remount
@@ -213,9 +218,12 @@ export default function ExcalidrawCanvas({
                 if (newerElements.length > 0) {
                     console.log('[Excalidraw] Live update:', newerElements.length, 'new/updated elements from', data.userId);
 
-                    // Update version map BEFORE setting the flag to prevent re-emission
+                    // Update version map and element length map BEFORE setting the flag to prevent re-emission
                     newerElements.forEach(el => {
                         latestVersionMap.current.set(el.id, el.version);
+                        // Update element length to prevent consuming ink for remote changes
+                        const length = calculateElementLength(el);
+                        elementLengthMap.current.set(el.id, length);
                     });
 
                     isRemoteUpdate.current = true;
