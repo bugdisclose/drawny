@@ -131,10 +131,10 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
   .inkBarWrapper {
-    min-width: 180px;
-    padding: 0 14px;
-    height: 40px;
-    gap: 10px;
+    min-width: auto;
+    padding: 0 8px;
+    height: 36px;
+    gap: 6px;
   }
 
   .iconLabel svg {
@@ -143,43 +143,12 @@
   }
 
   .labelText {
-    font-size: 12px;
-  }
-
-  .barContainer {
-    height: 5px;
-  }
-
-  .percentageDisplay {
-    font-size: 12px;
-    min-width: 36px;
-  }
-
-  .notification {
-    font-size: 11px;
-    padding: 8px 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .inkBarWrapper {
-    min-width: 160px;
-    padding: 0 12px;
-    height: 36px;
-    gap: 8px;
-  }
-
-  .iconLabel svg {
-    width: 11px;
-    height: 11px;
-  }
-
-  .labelText {
-    font-size: 11px;
+    display: none; /* Hide "Ink" label on mobile to save space */
   }
 
   .barContainer {
     height: 4px;
+    min-width: 50px; /* Ensure bar is visible */
   }
 
   .percentageDisplay {
@@ -188,8 +157,39 @@
   }
 
   .notification {
+    font-size: 11px;
+    padding: 8px 12px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 480px) {
+  .inkBarWrapper {
+    padding: 0 7px;
+    height: 34px;
+    gap: 5px;
+  }
+
+  .iconLabel svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .barContainer {
+    height: 4px;
+    min-width: 45px;
+  }
+
+  .percentageDisplay {
     font-size: 10px;
-    padding: 7px 12px;
+    min-width: 28px;
+  }
+
+  .notification {
+    font-size: 10px;
+    padding: 6px 10px;
   }
 }
 

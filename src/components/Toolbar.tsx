@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { COLORS, BRUSH_SIZES, BrushSize, ToolType } from '@/types';
 import styles from './Toolbar.module.css';
 
@@ -34,23 +34,90 @@ export default function Toolbar({
     canRedo = false,
 }: ToolbarProps) {
     const [isExpanded, setIsExpanded] = useState(true);
+    const [isVisible, setIsVisible] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
+    const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const sizeLabels: Record<BrushSize, string> = {
-        small: 'S',
-        medium: 'M',
-        large: 'L',
+    // Detect mobile device
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Auto-hide on mobile after 4 seconds of inactivity
+    useEffect(() => {
+        if (!isMobile || !isVisible) return;
+
+        const resetTimer = () => {
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+            }
+            hideTimerRef.current = setTimeout(() => {
+                setIsVisible(false);
+            }, 4000);
+        };
+
+        resetTimer();
+
+        return () => {
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+            }
+        };
+    }, [isMobile, isVisible]);
+
+    // Reset auto-hide timer on interaction
+    const handleInteraction = () => {
+        if (!isMobile) return;
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+        }
+        hideTimerRef.current = setTimeout(() => {
+            setIsVisible(false);
+        }, 4000);
+    };
+
+    const showToolbar = () => {
+        setIsVisible(true);
+        setIsExpanded(true);
     };
 
     return (
-        <div className={`${styles.toolbar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
-            {/* Toggle button */}
-            <button
-                className={styles.toggleButton}
-                onClick={() => setIsExpanded(!isExpanded)}
-                aria-label={isExpanded ? 'Collapse toolbar' : 'Expand toolbar'}
+        <>
+            {/* Floating Action Button - shows when toolbar is hidden on mobile */}
+            {isMobile && !isVisible && (
+                <button
+                    className={styles.fab}
+                    onClick={showToolbar}
+                    aria-label="Show toolbar"
+                >
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z" />
+                    </svg>
+                </button>
+            )}
+
+            {/* Main Toolbar */}
+            <div
+                className={`${styles.toolbar} ${isExpanded ? styles.expanded : styles.collapsed} ${!isVisible ? styles.hidden : ''}`}
+                onTouchStart={handleInteraction}
+                onMouseMove={handleInteraction}
             >
-                {isExpanded ? '◀' : '▶'}
-            </button>
+                {/* Toggle button */}
+                <button
+                    className={styles.toggleButton}
+                    onClick={() => {
+                        setIsExpanded(!isExpanded);
+                        handleInteraction();
+                    }}
+                    aria-label={isExpanded ? 'Collapse toolbar' : 'Expand toolbar'}
+                >
+                    {isExpanded ? '◀' : '▶'}
+                </button>
 
             {isExpanded && (
                 <>
@@ -169,5 +236,6 @@ export default function Toolbar({
                 </>
             )}
         </div>
+        </>
     );
 }

@@ -11,9 +11,62 @@
     gap: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: fadeIn 0.5s ease-out;
+}
+
+.toolbar.hidden {
+    transform: translateY(150%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    z-index: 999;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fabSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab:hover {
+    transform: translateX(-50%) scale(1.1);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+}
+
+.fab:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+.fab svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes fabSlideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 @keyframes fadeIn {
@@ -274,26 +327,43 @@
 @media (max-width: 768px) {
     .toolbar {
         top: auto;
-        bottom: 12px;
+        bottom: 10px;
         left: 50%;
         transform: translateX(-50%);
         flex-direction: row;
         flex-wrap: wrap;
-        max-width: 95vw;
+        max-width: calc(100vw - 20px);
         justify-content: center;
-        padding: 12px;
-        gap: 12px;
-        border-radius: 16px;
+        padding: 8px 10px;
+        gap: 6px;
+        border-radius: 20px;
+        background: rgba(26, 26, 46, 0.96);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+    }
+
+    .toolbar.hidden {
+        transform: translateX(-50%) translateY(150%);
+        opacity: 0;
     }
 
     .collapsed {
         flex-direction: row;
+        padding: 6px 8px;
     }
 
     .toggleButton {
         order: -1;
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+    }
+
+    .toggleButton:hover {
+        background: rgba(255, 255, 255, 0.12);
     }
 
     .statusSection {
@@ -302,12 +372,26 @@
         width: 100%;
         justify-content: center;
         order: -2;
+        padding: 2px 0 4px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+        margin-bottom: 2px;
+    }
+
+    .usersCount {
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .connectionDot {
+        width: 6px;
+        height: 6px;
     }
 
     .section {
         flex-direction: row;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
     }
 
     .sectionLabel {
@@ -319,58 +403,214 @@
     }
 
     .toolButton {
-        width: 52px;
-        height: 52px;
-        font-size: 18px;
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.08);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toolButton:hover {
+        background: rgba(255, 255, 255, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .toolButton:active {
+        transform: translateY(0);
+    }
+
+    .toolButton.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
     .toolButton svg {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
     }
 
     .sizeButton {
-        width: 52px;
-        height: 52px;
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.08);
     }
 
-    .colorButton {
-        width: 40px;
-        height: 40px;
-    }
-
-    .colorPalette {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-    }
-}
-
-/* Extra small mobile */
-@media (max-width: 480px) {
-    .toolbar {
-        bottom: 8px;
-        max-width: 98vw;
-        padding: 10px;
-        gap: 10px;
-    }
-
-    .toolButton {
-        width: 48px;
-        height: 48px;
-    }
-
-    .sizeButton {
-        width: 48px;
-        height: 48px;
+    .sizeButton.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
     .colorButton {
         width: 36px;
         height: 36px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.2s ease;
+    }
+
+    .colorButton.selected {
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.4);
+        transform: scale(1.1);
     }
 
     .colorPalette {
         grid-template-columns: repeat(5, 1fr);
-        gap: 6px;
+        gap: 5px;
+    }
+
+    .undoRedoButton:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+}
+
+/* Extra small mobile */
+@media (max-width: 480px) {
+    .fab {
+        width: 52px;
+        height: 52px;
+        bottom: 16px;
+    }
+
+    .fab svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .toolbar {
+        bottom: 8px;
+        max-width: calc(100vw - 16px);
+        padding: 7px 8px;
+        gap: 5px;
+        border-radius: 18px;
+    }
+
+    .collapsed {
+        padding: 6px;
+    }
+
+    .toggleButton {
+        width: 36px;
+        height: 36px;
+        font-size: 11px;
+        border-radius: 9px;
+    }
+
+    .statusSection {
+        padding: 2px 0 4px;
+        border-radius: 9px;
+    }
+
+    .usersCount {
+        font-size: 9px;
+    }
+
+    .connectionDot {
+        width: 5px;
+        height: 5px;
+    }
+
+    .section {
+        gap: 4px;
+    }
+
+    .toolButton {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+    }
+
+    .toolButton svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .sizeButton {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+    }
+
+    .colorButton {
+        width: 34px;
+        height: 34px;
+    }
+
+    .colorPalette {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+    }
+}
+
+/* Very small screens - optimize further */
+@media (max-width: 380px) {
+    .fab {
+        width: 48px;
+        height: 48px;
+        bottom: 12px;
+    }
+
+    .fab svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .toolbar {
+        bottom: 6px;
+        padding: 6px 7px;
+        gap: 4px;
+        border-radius: 16px;
+        max-width: calc(100vw - 12px);
+    }
+
+    .collapsed {
+        padding: 5px;
+    }
+
+    .toggleButton {
+        width: 34px;
+        height: 34px;
+        font-size: 10px;
+        border-radius: 8px;
+    }
+
+    .statusSection {
+        padding: 1px 0 3px;
+        margin-bottom: 1px;
+    }
+
+    .usersCount {
+        font-size: 8px;
+    }
+
+    .section {
+        gap: 3px;
+    }
+
+    .toolButton {
+        width: 40px;
+        height: 40px;
+        border-radius: 9px;
+    }
+
+    .toolButton svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    .sizeButton {
+        width: 40px;
+        height: 40px;
+        border-radius: 9px;
+    }
+
+    .colorButton {
+        width: 32px;
+        height: 32px;
+    }
+
+    .colorPalette {
+        gap: 3px;
     }
 }

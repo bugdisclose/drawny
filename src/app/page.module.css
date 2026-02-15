@@ -188,31 +188,38 @@
   }
 
   .logoText {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .logoTag {
-    font-size: 8px;
+    display: none; /* Hide tagline on mobile */
+  }
+
+  .artistBadge {
+    display: none; /* Hide artist badge on mobile */
   }
 
   .topBar {
     top: 12px;
     right: 12px;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 6px;
+    flex-wrap: nowrap; /* Don't wrap on mobile */
     justify-content: flex-end;
-    max-width: calc(100vw - 24px);
   }
 
   .galleryButton {
-    padding: 8px 14px;
-    font-size: 13px;
-    height: 40px;
+    padding: 8px;
+    font-size: 0; /* Hide text */
+    height: 36px;
+    width: 36px;
+    gap: 0;
+    min-width: 36px;
   }
 
   .galleryButton svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    margin: 0;
   }
 }
 
@@ -224,22 +231,24 @@
   }
 
   .logoText {
-    font-size: 18px;
-  }
-
-  .logoTag {
-    font-size: 7px;
+    font-size: 16px;
   }
 
   .topBar {
     top: 10px;
     right: 10px;
-    gap: 6px;
+    gap: 5px;
   }
 
   .galleryButton {
-    padding: 8px 12px;
-    font-size: 12px;
-    height: 36px;
+    padding: 7px;
+    height: 34px;
+    width: 34px;
+    min-width: 34px;
+  }
+
+  .galleryButton svg {
+    width: 15px;
+    height: 15px;
   }
 }
