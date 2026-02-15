@@ -11,6 +11,7 @@ import CountdownTimer from '@/components/CountdownTimer';
 import ConnectionStatus from '@/components/ConnectionStatus';
 import WelcomeHint from '@/components/WelcomeHint';
 import InkBar from '@/components/InkBar';
+import ShareButton from '@/components/ShareButton';
 import styles from './page.module.css';
 
 // Dynamic import for ExcalidrawCanvas
@@ -161,7 +162,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Sleek Top Bar - Gallery, Timer, and Ink */}
+      {/* Sleek Top Bar - Gallery, Timer, Ink, and Share */}
       <div className={styles.topBar}>
         <Link href="/gallery" className={styles.galleryButton}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -177,6 +178,9 @@ export default function Home() {
 
         {/* Ink Bar - Shows ink stamina */}
         <InkBar inkState={inkState} />
+
+        {/* Share Button - Mobile-friendly sharing */}
+        <ShareButton />
       </div>
 
       <ExcalidrawCanvas

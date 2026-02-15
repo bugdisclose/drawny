@@ -88,6 +88,52 @@ export default function ExcalidrawCanvas({
     // Collaborators state
     const [collaborators, setCollaborators] = useState<Map<string, { pointer: { x: number; y: number }; username?: string; color?: string }>>(new Map());
 
+    // Viewport coordinates for deep linking
+    const updateURLDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Parse viewport coordinates from URL hash (memoized to run only once)
+    const initialViewport = React.useMemo(() => {
+        if (typeof window === 'undefined') return null;
+
+        const hash = window.location.hash.slice(1); // Remove '#'
+        if (!hash) return null;
+
+        const params = new URLSearchParams(hash);
+        const x = params.get('x');
+        const y = params.get('y');
+        const z = params.get('z');
+
+        if (x !== null && y !== null && z !== null) {
+            const viewport = {
+                scrollX: parseFloat(x),
+                scrollY: parseFloat(y),
+                zoom: parseFloat(z)
+            };
+            console.log('[DeepLink] Parsed initial viewport from URL:', viewport);
+            return viewport;
+        }
+        return null;
+    }, []); // Empty deps - only run once on mount
+
+    // Update URL hash with viewport coordinates (debounced)
+    const updateURLHash = useCallback((scrollX: number, scrollY: number, zoom: number) => {
+        if (typeof window === 'undefined') return;
+
+        // Clear existing timeout
+        if (updateURLDebounceRef.current) {
+            clearTimeout(updateURLDebounceRef.current);
+        }
+
+        // Debounce URL updates to avoid excessive history entries
+        updateURLDebounceRef.current = setTimeout(() => {
+            const hash = `#x=${Math.round(scrollX)}&y=${Math.round(scrollY)}&z=${zoom.toFixed(2)}`;
+
+            // Use replaceState to avoid polluting browser history
+            window.history.replaceState(null, '', hash);
+            console.log('[DeepLink] Updated URL:', hash);
+        }, 500); // 500ms debounce
+    }, []);
+
     // Calculate stroke width based on size
     const getStrokeWidth = useCallback((size: BrushSize) => {
         switch (size) {
@@ -174,6 +220,30 @@ export default function ExcalidrawCanvas({
 
         return () => clearTimeout(timeoutId);
     }, [excalidrawAPI, activeTool]);
+
+    // Set initial viewport from URL hash - must be done after API is ready
+    const hasSetInitialViewport = useRef(false);
+    useEffect(() => {
+        if (!excalidrawAPI || hasSetInitialViewport.current || !initialViewport) return;
+
+        console.log('[DeepLink] Setting initial viewport from URL:', initialViewport);
+
+        // Mark as set to prevent re-running
+        hasSetInitialViewport.current = true;
+
+        // Use a small delay to ensure Excalidraw is fully initialized
+        setTimeout(() => {
+            const currentElements = excalidrawAPI.getSceneElements();
+            excalidrawAPI.updateScene({
+                elements: currentElements,
+                appState: {
+                    scrollX: initialViewport.scrollX,
+                    scrollY: initialViewport.scrollY,
+                    zoom: { value: initialViewport.zoom as any } // Cast to satisfy type
+                }
+            });
+        }, 100);
+    }, [excalidrawAPI, initialViewport]);
 
     // Handle Socket Events - DO NOT depend on excalidrawAPI to avoid stale closures
     useEffect(() => {
@@ -475,6 +545,11 @@ export default function ExcalidrawCanvas({
         excalidrawAPI.updateScene({ collaborators: collaborators as any });
     }, [excalidrawAPI, collaborators]);
 
+    // Handle viewport changes for deep linking
+    const onScrollChange = useCallback((scrollX: number, scrollY: number, zoom: { value: number }) => {
+        updateURLHash(scrollX, scrollY, zoom.value);
+    }, [updateURLHash]);
+
     return (
         <div className={styles.excalidrawWrapper}>
             <Excalidraw
@@ -490,6 +565,7 @@ export default function ExcalidrawCanvas({
                 }}
                 onPointerUpdate={onPointerUpdate}
                 onChange={onChange}
+                onScrollChange={onScrollChange}
                 viewModeEnabled={activeTool === 'hand'}
                 zenModeEnabled={false} // We handle UI hiding via CSS
                 gridModeEnabled={false}
