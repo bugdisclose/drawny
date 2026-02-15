@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { InkState } from '@/lib/InkManager';
+import { playInkFullSound, playInkEmptySound, requestNotificationPermission, showInkFullNotification } from '@/lib/soundUtils';
 import styles from './InkBar.module.css';
 
 interface InkBarProps {
@@ -13,25 +14,59 @@ export default function InkBar({ inkState }: InkBarProps) {
   const [isEmpty, setIsEmpty] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const previousPercentageRef = useRef<number>(100); // Track previous percentage for transition detection
+  const hasRequestedPermission = useRef(false);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (!hasRequestedPermission.current) {
+      hasRequestedPermission.current = true;
+      // Request permission after a short delay to avoid blocking initial render
+      setTimeout(() => {
+        requestNotificationPermission().then(granted => {
+          if (granted) {
+            console.log('[InkBar] Notification permission granted');
+          }
+        });
+      }, 2000);
+    }
+  }, []);
 
   useEffect(() => {
     const lowThreshold = 20; // 20% is considered low
     const wasLow = isLow;
     const wasEmpty = isEmpty;
+    const previousPercentage = previousPercentageRef.current;
 
     setIsLow(inkState.percentage <= lowThreshold && inkState.percentage > 0);
     setIsEmpty(inkState.percentage === 0);
 
-    // Show notification when transitioning to low or empty
-    if (!wasEmpty && inkState.percentage === 0) {
+    // Detect transition to FULL (was not full, now is full)
+    if (previousPercentage < 100 && inkState.percentage === 100) {
+      console.log('[InkBar] 🎉 Ink became full!');
+      playInkFullSound();
+      showInkFullNotification();
+      setNotificationMessage('Ink refilled! Time to draw! 🎨');
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+    }
+    // Detect transition to EMPTY (was not empty, now is empty)
+    else if (!wasEmpty && inkState.percentage === 0) {
+      console.log('[InkBar] 🔇 Ink became empty!');
+      playInkEmptySound();
       setNotificationMessage('Out of ink! Please wait for regeneration...');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 3000);
-    } else if (!wasLow && inkState.percentage <= lowThreshold && inkState.percentage > 0) {
+    }
+    // Detect transition to LOW (was not low, now is low)
+    else if (!wasLow && inkState.percentage <= lowThreshold && inkState.percentage > 0) {
       setNotificationMessage('Ink running low!');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 2500);
     }
+
+    // Update previous percentage for next comparison
+    previousPercentageRef.current = inkState.percentage;
   }, [inkState.percentage, isLow, isEmpty]);
 
   const getBarColor = () => {
@@ -79,7 +114,11 @@ export default function InkBar({ inkState }: InkBarProps) {
 
       {/* Notification Message */}
       {showNotification && (
-        <div className={`${styles.notification} ${isEmpty ? styles.notificationEmpty : styles.notificationLow}`}>
+        <div className={`${styles.notification} ${
+          inkState.percentage === 100 ? styles.notificationFull :
+          isEmpty ? styles.notificationEmpty :
+          styles.notificationLow
+        }`}>
           {notificationMessage}
         </div>
       )}
