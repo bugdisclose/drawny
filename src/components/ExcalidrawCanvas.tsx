@@ -98,6 +98,22 @@ export default function ExcalidrawCanvas({
         }
     }, []);
 
+    // Clear Excalidraw's localStorage on mount to prevent it from restoring the last tool
+    useEffect(() => {
+        // Clear the activeTool from Excalidraw's localStorage
+        try {
+            const excalidrawKeys = Object.keys(localStorage).filter(key => key.startsWith('excalidraw'));
+            excalidrawKeys.forEach(key => {
+                if (key.includes('appState') || key.includes('activeTool')) {
+                    console.log('[Excalidraw] Clearing localStorage key:', key);
+                    localStorage.removeItem(key);
+                }
+            });
+        } catch (e) {
+            console.warn('[Excalidraw] Failed to clear localStorage:', e);
+        }
+    }, []); // Run only once on mount
+
     // When initialElements changes, mark as initialized (after first remount)
     useEffect(() => {
         if (initialElements && initialElements.length > 0) {
@@ -132,19 +148,32 @@ export default function ExcalidrawCanvas({
             }
         });
 
-        // Update Tool - FORCE update whenever dependencies change
-        // This ensures initial load gets the correct tool (brush by default)
-        const tool = activeTool === 'brush' ? 'freedraw' :
-            activeTool === 'eraser' ? 'eraser' : 'selection';
-
-        console.log('[Excalidraw] Setting active tool to:', tool, '(from activeTool:', activeTool + ')');
-        excalidrawAPI.setActiveTool({ type: tool });
-
         // Reset flag on next tick
         setTimeout(() => {
             isRemoteUpdate.current = false;
         }, 0);
-    }, [excalidrawAPI, activeTool, activeColor, activeSize, getStrokeWidth]);
+    }, [excalidrawAPI, activeColor, activeSize, getStrokeWidth]);
+
+    // Separate effect to set the active tool - runs with delay to override Excalidraw's localStorage restoration
+    useEffect(() => {
+        if (!excalidrawAPI) return;
+
+        const tool = activeTool === 'brush' ? 'freedraw' :
+            activeTool === 'eraser' ? 'eraser' : 'selection';
+
+        console.log('[Excalidraw] Setting active tool to:', tool, '(from activeTool:', activeTool + ')');
+
+        // Set immediately
+        excalidrawAPI.setActiveTool({ type: tool });
+
+        // Also set with a delay to override any localStorage restoration
+        const timeoutId = setTimeout(() => {
+            console.log('[Excalidraw] Re-setting active tool after delay to:', tool);
+            excalidrawAPI.setActiveTool({ type: tool });
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
+    }, [excalidrawAPI, activeTool]);
 
     // Handle Socket Events - DO NOT depend on excalidrawAPI to avoid stale closures
     useEffect(() => {
