@@ -206,7 +206,7 @@ export default function ShareButton() {
                                     value={customMessage}
                                     onChange={(e) => setCustomMessage(e.target.value)}
                                     maxLength={200}
-                                    rows={3}
+                                    rows={2}
                                 />
                             )}
 
