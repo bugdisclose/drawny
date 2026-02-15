@@ -6,6 +6,7 @@ import { Socket } from 'socket.io-client';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
 import { ToolType, BrushSize, SimpleColor, ServerToClientEvents, ClientToServerEvents } from '@/types';
+import { InkManager } from '@/lib/InkManager';
 import '@excalidraw/excalidraw/index.css';
 
 import styles from './ExcalidrawCanvas.module.css';
@@ -21,13 +22,15 @@ interface ExcalidrawCanvasProps {
     activeColor: string;
     activeSize: BrushSize;
     socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
+    inkManager: InkManager | null;
 }
 
 export default function ExcalidrawCanvas({
     activeTool,
     activeColor,
     activeSize,
-    socket
+    socket,
+    inkManager
 }: ExcalidrawCanvasProps) {
     console.log('[ExcalidrawCanvas] 🎨 Component rendering/mounting');
 
@@ -46,6 +49,12 @@ export default function ExcalidrawCanvas({
 
     // Flag to prevent infinite loops when updating from socket
     const isRemoteUpdate = useRef(false);
+
+    // Track element versions for ink consumption
+    const elementLengthMap = useRef<Map<string, number>>(new Map());
+
+    // Track last valid scene state (before ink depletion)
+    const lastValidElements = useRef<readonly ExcalidrawElement[]>([]);
 
     // Log component mount
     useEffect(() => {
@@ -306,6 +315,37 @@ export default function ExcalidrawCanvas({
         });
     };
 
+    // Calculate approximate length of an element for ink consumption
+    const calculateElementLength = (element: ExcalidrawElement): number => {
+        if (element.type === 'freedraw') {
+            // For freedraw, calculate total path length
+            const points = (element as any).points || [];
+            let length = 0;
+            for (let i = 1; i < points.length; i++) {
+                const dx = points[i][0] - points[i - 1][0];
+                const dy = points[i][1] - points[i - 1][1];
+                length += Math.sqrt(dx * dx + dy * dy);
+            }
+            return length;
+        } else if (element.type === 'line' || element.type === 'arrow') {
+            // For lines/arrows, calculate distance between points
+            const points = (element as any).points || [];
+            let length = 0;
+            for (let i = 1; i < points.length; i++) {
+                const dx = points[i][0] - points[i - 1][0];
+                const dy = points[i][1] - points[i - 1][1];
+                length += Math.sqrt(dx * dx + dy * dy);
+            }
+            return length;
+        } else if (element.type === 'rectangle' || element.type === 'diamond' || element.type === 'ellipse') {
+            // For shapes, use perimeter approximation
+            const width = element.width || 0;
+            const height = element.height || 0;
+            return 2 * (width + height);
+        }
+        return 0;
+    };
+
     // Handle local changes
     const onChange = (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
         // If this change was triggered by a remote update, ignore it
@@ -315,6 +355,31 @@ export default function ExcalidrawCanvas({
 
         if (!socket) return;
 
+        // Check if user has ink before allowing new drawing elements
+        if (inkManager && !inkManager.canDraw()) {
+            // Find new drawing elements (not in lastValidElements)
+            const lastValidIds = new Set(lastValidElements.current.map(el => el.id));
+            const newDrawingElements = elements.filter(el => {
+                const isDrawingElement = el.type === 'freedraw' || el.type === 'line' ||
+                    el.type === 'arrow' || el.type === 'rectangle' ||
+                    el.type === 'diamond' || el.type === 'ellipse';
+                return isDrawingElement && !lastValidIds.has(el.id);
+            });
+
+            // If there are new drawing elements and no ink, revert the scene
+            if (newDrawingElements.length > 0 && excalidrawAPI) {
+                console.log('[Excalidraw] ❌ Out of ink! Preventing new drawing elements.');
+                isRemoteUpdate.current = true;
+                excalidrawAPI.updateScene({
+                    elements: lastValidElements.current as ExcalidrawElement[]
+                });
+                setTimeout(() => {
+                    isRemoteUpdate.current = false;
+                }, 0);
+                return; // Don't process this change
+            }
+        }
+
         // Filter elements that have changed
         const changedElements = elements.filter(el => {
             const lastVersion = latestVersionMap.current.get(el.id) || 0;
@@ -322,11 +387,50 @@ export default function ExcalidrawCanvas({
         });
 
         if (changedElements.length > 0) {
+            // Track ink consumption for new/modified drawing elements
+            if (inkManager) {
+                for (const el of changedElements) {
+                    // Only consume ink for drawing tools (not selection, text, etc.)
+                    if (el.type === 'freedraw' || el.type === 'line' || el.type === 'arrow' ||
+                        el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse') {
+
+                        const currentLength = calculateElementLength(el);
+                        const previousLength = elementLengthMap.current.get(el.id) || 0;
+                        const deltaLength = currentLength - previousLength;
+
+                        if (deltaLength > 0) {
+                            const canConsume = inkManager.consumeInk(deltaLength);
+
+                            if (!canConsume) {
+                                // Out of ink during drawing - revert to last valid state
+                                console.log('[Excalidraw] ❌ Ran out of ink during drawing! Reverting.');
+                                if (excalidrawAPI) {
+                                    isRemoteUpdate.current = true;
+                                    excalidrawAPI.updateScene({
+                                        elements: lastValidElements.current as ExcalidrawElement[]
+                                    });
+                                    setTimeout(() => {
+                                        isRemoteUpdate.current = false;
+                                    }, 0);
+                                }
+                                return; // Don't process this change
+                            }
+
+                            // Update tracked length
+                            elementLengthMap.current.set(el.id, currentLength);
+                        }
+                    }
+                }
+            }
+
             console.log(`[Excalidraw] Emitting ${changedElements.length} changed elements out of ${elements.length} total`);
             // Update local version map
             changedElements.forEach(el => {
                 latestVersionMap.current.set(el.id, el.version);
             });
+
+            // Store this as the last valid state (only if we successfully consumed ink or no ink was needed)
+            lastValidElements.current = elements;
 
             // IMPORTANT: Send ALL elements, not just changed ones
             // This ensures the server has the complete state including deletions

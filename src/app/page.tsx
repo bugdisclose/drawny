@@ -4,11 +4,13 @@ import React, { useCallback, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSocket } from '@/hooks/useSocket';
+import { useInkManager } from '@/hooks/useInkManager';
 import { COLORS, BrushSize, ToolType, SceneInitData } from '@/types';
 import Toolbar from '@/components/Toolbar';
 import CountdownTimer from '@/components/CountdownTimer';
 import ConnectionStatus from '@/components/ConnectionStatus';
 import WelcomeHint from '@/components/WelcomeHint';
+import InkBar from '@/components/InkBar';
 import styles from './page.module.css';
 
 // Dynamic import for ExcalidrawCanvas
@@ -28,6 +30,9 @@ export default function Home() {
   // Initialize with a supported tool path
   const [selectedTool, setSelectedTool] = useState<ToolType>('brush');
   const [startTime, setStartTime] = useState<number | null>(null);
+
+  // Initialize ink manager
+  const { inkState, inkManager } = useInkManager();
 
   // Handle users count update from socket
   const handleUsersCountChange = useCallback((count: number) => {
@@ -66,6 +71,36 @@ export default function Home() {
 
   const handleToolChange = useCallback((tool: ToolType) => {
     setSelectedTool(tool);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform);
+    const event = new KeyboardEvent('keydown', {
+      key: 'z',
+      code: 'KeyZ',
+      ctrlKey: !isMac,
+      metaKey: isMac,
+      shiftKey: false,
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform);
+    const event = new KeyboardEvent('keydown', {
+      key: 'z',
+      code: 'KeyZ',
+      ctrlKey: !isMac,
+      metaKey: isMac,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
   }, []);
 
   // Keyboard shortcuts (some handled by Excalidraw, but tool switching is ours)
@@ -126,8 +161,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Header Actions */}
-      <div className={styles.headerRight}>
+      {/* Sleek Top Bar - Gallery, Timer, and Ink */}
+      <div className={styles.topBar}>
         <Link href="/gallery" className={styles.galleryButton}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -136,8 +171,12 @@ export default function Home() {
           </svg>
           Gallery
         </Link>
+
         {/* Timer synced with server start time */}
         <CountdownTimer serverStartTime={startTime} />
+
+        {/* Ink Bar - Shows ink stamina */}
+        <InkBar inkState={inkState} />
       </div>
 
       <ExcalidrawCanvas
@@ -145,6 +184,7 @@ export default function Home() {
         activeColor={selectedColor}
         activeSize={selectedSize}
         socket={socket}
+        inkManager={inkManager}
       />
 
       <Toolbar
@@ -156,11 +196,10 @@ export default function Home() {
         onColorChange={handleColorChange}
         onSizeChange={handleSizeChange}
         onToolChange={handleToolChange}
-        // Undo/Redo hidden for MVP as Excalidraw handles it internally via shortcuts
-        // onUndo={handleUndo}
-        // onRedo={handleRedo}
-        canUndo={false}
-        canRedo={false}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={true}
+        canRedo={true}
       />
 
       <WelcomeHint />
