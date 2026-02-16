@@ -13,6 +13,7 @@ import ConnectionStatus from '@/components/ConnectionStatus';
 import WelcomeHint from '@/components/WelcomeHint';
 import InkBar from '@/components/InkBar';
 import ShareButton from '@/components/ShareButton';
+import ShareNudge from '@/components/ShareNudge';
 import styles from './page.module.css';
 
 // Dynamic import for ExcalidrawCanvas
@@ -43,6 +44,9 @@ export default function Home() {
 
   // History ref — ExcalidrawCanvas populates this with undo/redo functions
   const historyRef = useRef<HistoryActions | null>(null);
+
+  // Share modal open ref — lets ShareNudge trigger the share modal
+  const openShareRef = useRef<(() => void) | null>(null);
 
   const handleViewportChange = useCallback((vp: ViewportCoordinates) => {
     setViewport(vp);
@@ -190,7 +194,7 @@ export default function Home() {
         <InkBar inkState={inkState} />
 
         {/* Share Button - Mobile-friendly sharing with snapshot */}
-        <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} />
+        <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />
       </div>
 
       <ExcalidrawCanvas
@@ -220,6 +224,13 @@ export default function Home() {
       />
 
       <WelcomeHint />
+
+      {/* Contextual share nudges — encourages sharing on zoom-in, drawing, multi-user */}
+      <ShareNudge
+        viewport={viewport}
+        usersCount={usersCount}
+        onOpenShare={() => openShareRef.current?.()}
+      />
     </main>
   );
 }

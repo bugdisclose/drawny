@@ -1,0 +1,196 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   ShareNudge — Contextual share prompt
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.nudge {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 998;
+    animation: nudgeSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: auto;
+}
+
+.nudgeExit {
+    animation: nudgeSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.nudgeContent {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(26, 26, 46, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 10px 14px;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 20px rgba(102, 126, 234, 0.15);
+    max-width: 320px;
+}
+
+.nudgeEmoji {
+    font-size: 24px;
+    flex-shrink: 0;
+    animation: emojiPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.nudgeText {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.nudgeLabel {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.nudgeCta {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none;
+    position: relative;
+}
+
+.nudgeCta::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+.nudgeCta:hover::after {
+    width: 100%;
+}
+
+.nudgeCta:hover {
+    color: #a5b4fc;
+}
+
+.nudgeCta:active {
+    transform: scale(0.97);
+}
+
+.nudgeDismiss {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 2px;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nudgeDismiss:hover {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Animations ──────────────────────────────────────────────────── */
+
+@keyframes nudgeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(40px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes nudgeSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(40px) scale(0.9);
+    }
+}
+
+@keyframes emojiPop {
+    from {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+/* ─── Mobile responsive ──────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .nudge {
+        bottom: 70px;
+        right: 12px;
+        left: 12px;
+    }
+
+    .nudgeContent {
+        max-width: 100%;
+        padding: 10px 12px;
+        border-radius: 14px;
+    }
+
+    .nudgeEmoji {
+        font-size: 22px;
+    }
+
+    .nudgeLabel {
+        font-size: 10px;
+    }
+
+    .nudgeCta {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 400px) {
+    .nudge {
+        bottom: 60px;
+        right: 8px;
+        left: 8px;
+    }
+
+    .nudgeContent {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .nudgeEmoji {
+        font-size: 20px;
+    }
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, type MutableRefObject } from 'react';
 import { buildShareUrl, buildDynamicShareUrl, formatCoordinates, type ViewportCoordinates } from '@/lib/deepLinkUtils';
 import styles from './ShareButton.module.css';
 
@@ -15,9 +15,10 @@ const SHARE_TEMPLATES = [
 interface ShareButtonProps {
     viewport?: ViewportCoordinates | null;
     onCaptureSnapshot?: () => Promise<string | null>;
+    openRef?: MutableRefObject<(() => void) | null>;
 }
 
-export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButtonProps) {
+export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: ShareButtonProps) {
     const [showModal, setShowModal] = useState(false);
     const [showCopied, setShowCopied] = useState(false);
     const [showUrlCopied, setShowUrlCopied] = useState(false);
@@ -47,6 +48,7 @@ export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButton
         setShareUrl(buildShareUrl(viewport));
         setShowModal(true);
         setSnapshotId(null);
+        console.log('[Share] Modal opened');
 
         // Capture snapshot
         if (onCaptureSnapshot) {
@@ -87,6 +89,18 @@ export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButton
             }
         }
     }, [viewport, onCaptureSnapshot]);
+
+    // Expose open function to parent via ref
+    useEffect(() => {
+        if (openRef) {
+            openRef.current = handleButtonClick;
+        }
+        return () => {
+            if (openRef) {
+                openRef.current = null;
+            }
+        };
+    }, [openRef, handleButtonClick]);
 
     const handleCloseModal = useCallback(() => {
         setShowModal(false);
