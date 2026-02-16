@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { buildShareUrl, formatCoordinates, type ViewportCoordinates } from '@/lib/deepLinkUtils';
+import { buildShareUrl, buildDynamicShareUrl, formatCoordinates, type ViewportCoordinates } from '@/lib/deepLinkUtils';
 import styles from './ShareButton.module.css';
 
 const SHARE_TEMPLATES = [
@@ -32,20 +32,53 @@ export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButton
 
     // Snapshot state
     const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
+    const [snapshotId, setSnapshotId] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
 
+    // When snapshotId is available, update shareUrl to use the dynamic share page
+    useEffect(() => {
+        if (snapshotId) {
+            setShareUrl(buildDynamicShareUrl(snapshotId, viewport));
+        }
+    }, [snapshotId, viewport]);
+
     const handleButtonClick = useCallback(async () => {
-        // Re-compute URL fresh when modal opens
+        // Start with the basic share URL
         setShareUrl(buildShareUrl(viewport));
         setShowModal(true);
+        setSnapshotId(null);
 
         // Capture snapshot
         if (onCaptureSnapshot) {
             setIsCapturing(true);
             try {
-                const url = await onCaptureSnapshot();
-                setSnapshotUrl(url);
-                console.log('[Share] Snapshot captured:', url ? 'success' : 'empty canvas');
+                const blobUrl = await onCaptureSnapshot();
+                setSnapshotUrl(blobUrl);
+                console.log('[Share] Snapshot captured:', blobUrl ? 'success' : 'empty canvas');
+
+                // Upload snapshot to server for dynamic OG image
+                if (blobUrl) {
+                    try {
+                        const response = await fetch(blobUrl);
+                        const blob = await response.blob();
+
+                        const uploadResp = await fetch('/api/snapshot', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'image/png' },
+                            body: blob,
+                        });
+
+                        if (uploadResp.ok) {
+                            const { id } = await uploadResp.json();
+                            setSnapshotId(id);
+                            console.log('[Share] ✅ Snapshot uploaded, id:', id);
+                        } else {
+                            console.warn('[Share] Snapshot upload failed:', uploadResp.status);
+                        }
+                    } catch (uploadErr) {
+                        console.warn('[Share] Snapshot upload error:', uploadErr);
+                    }
+                }
             } catch (error) {
                 console.error('[Share] Snapshot capture failed:', error);
                 setSnapshotUrl(null);
@@ -58,6 +91,7 @@ export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButton
     const handleCloseModal = useCallback(() => {
         setShowModal(false);
         setCustomMessage('');
+        setSnapshotId(null);
         // Revoke snapshot blob URL to free memory
         if (snapshotUrl) {
             URL.revokeObjectURL(snapshotUrl);
@@ -147,10 +181,32 @@ export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButton
 
         if (isMobile && navigator.share) {
             try {
-                await navigator.share({
+                // Build share data with text
+                const shareData: ShareData = {
                     title: 'Drawny - Draw with strangers',
                     text,
-                });
+                };
+
+                // If we have a snapshot, attach it as a file
+                if (snapshotUrl) {
+                    try {
+                        const response = await fetch(snapshotUrl);
+                        const blob = await response.blob();
+                        const file = new File([blob], 'drawny-snapshot.png', { type: 'image/png' });
+
+                        // Check if the browser supports sharing files
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            shareData.files = [file];
+                            console.log('[Share] Attaching snapshot image to share');
+                        } else {
+                            console.log('[Share] File sharing not supported, sharing text only');
+                        }
+                    } catch (fileError) {
+                        console.warn('[Share] Could not attach snapshot file:', fileError);
+                    }
+                }
+
+                await navigator.share(shareData);
                 console.log('[Share] Successfully shared via Web Share API');
                 handleCloseModal();
             } catch (error) {
@@ -162,7 +218,7 @@ export default function ShareButton({ viewport, onCaptureSnapshot }: ShareButton
         } else {
             copyToClipboard(text);
         }
-    }, [getShareMessage, getShareHashtag, shareUrl, copyToClipboard, handleCloseModal]);
+    }, [getShareMessage, getShareHashtag, shareUrl, snapshotUrl, copyToClipboard, handleCloseModal]);
 
     const shareToTwitter = useCallback(() => {
         const message = getShareMessage();

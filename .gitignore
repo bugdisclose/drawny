@@ -44,3 +44,6 @@ next-env.d.ts
 /public/archives/*.json
 /public/archives/*.png
 
+
+# Uploaded snapshots (ephemeral)
+.snapshots/

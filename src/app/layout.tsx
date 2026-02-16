@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://drawny.com'),
   title: 'Drawny - Draw with strangers.',
   description: 'Draw together on a shared canvas. No login, no setup — just draw.',
   keywords: ['drawing', 'collaborative', 'canvas', 'art', 'anonymous', 'real-time'],
@@ -16,6 +17,22 @@ export const metadata: Metadata = {
     title: 'Drawny - Draw with strangers.',
     description: 'Draw together on a shared canvas. No login, no setup — just draw.',
     type: 'website',
+    url: 'https://drawny.com',
+    siteName: 'Drawny',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1024,
+        height: 1024,
+        alt: 'Drawny - Draw with strangers',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Drawny - Draw with strangers.',
+    description: 'Draw together on a shared canvas. No login, no setup — just draw.',
+    images: ['/og-image.png'],
   },
 };
 

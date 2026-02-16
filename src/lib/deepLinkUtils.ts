@@ -153,3 +153,24 @@ export function formatCoordinates(viewport: ViewportCoordinates): string {
   const z = viewport.zoom.toFixed(1);
   return `(${x}, ${y}) · ${z}x`;
 }
+
+/**
+ * Build a dynamic share page URL that includes the snapshot ID.
+ * This URL has server-rendered OG meta tags for social media previews.
+ * 
+ * Format: https://drawny.com/s/[snapshotId]?x=100&y=-200&z=1.50
+ * 
+ * @param snapshotId - The uploaded snapshot ID
+ * @param viewport - Current viewport coordinates
+ * @returns Full share URL string
+ */
+export function buildDynamicShareUrl(snapshotId: string, viewport?: ViewportCoordinates | null): string {
+  const origin = getShareOrigin();
+
+  let queryParams = '';
+  if (viewport) {
+    queryParams = `?x=${Math.round(viewport.scrollX)}&y=${Math.round(viewport.scrollY)}&z=${viewport.zoom.toFixed(2)}`;
+  }
+
+  return `${origin}/s/${snapshotId}${queryParams}`;
+}
