@@ -176,8 +176,14 @@ export default function Home() {
         )}
       </div>
 
-      {/* Sleek Top Bar - Gallery, Timer, Ink, and Share */}
+      {/* Sleek Top Bar - All status items unified */}
       <div className={styles.topBar}>
+        {/* Live artists — shown on mobile, hidden on desktop (sidebar has it) */}
+        <div className={styles.liveCount}>
+          <span className={styles.liveDot} />
+          <span>{usersCount}</span>
+        </div>
+
         <Link href="/gallery" className={styles.galleryButton}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />

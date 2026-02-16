@@ -197,10 +197,29 @@ export default function ShareNudge({ viewport, usersCount, onOpenShare }: ShareN
         }
     }, [viewport, onOpenShare, dismissNudge]);
 
+    // ─── Swipe-to-dismiss for mobile ─────────────────────────────────
+    const touchStartY = useRef(0);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        touchStartY.current = e.touches[0].clientY;
+    }, []);
+
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+        // Swipe down > 40px = dismiss
+        if (deltaY > 40) {
+            dismissNudge();
+        }
+    }, [dismissNudge]);
+
     if (!nudge) return null;
 
     return (
-        <div className={`${styles.nudge} ${isExiting ? styles.nudgeExit : ''}`}>
+        <div
+            className={`${styles.nudge} ${isExiting ? styles.nudgeExit : ''}`}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <div className={styles.nudgeContent}>
                 <span className={styles.nudgeEmoji}>{nudge.emoji}</span>
                 <div className={styles.nudgeText}>

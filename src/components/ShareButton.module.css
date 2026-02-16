@@ -43,6 +43,41 @@
     flex-shrink: 0;
 }
 
+/* Subtle highlight glow — triggered randomly */
+.shareGlow {
+    animation: shareGlowPulse 2s ease-in-out;
+}
+
+@keyframes shareGlowPulse {
+    0% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    15% {
+        box-shadow: 0 0 12px rgba(102, 126, 234, 0.35), 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    30% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    45% {
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.25), 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    60% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    75% {
+        box-shadow: 0 0 8px rgba(102, 126, 234, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    100% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+}
+
 .buttonText {
     display: inline;
 }
@@ -141,29 +176,82 @@
 @media (max-width: 768px) {
     .shareButton {
         padding: 0;
-        height: 36px;
-        width: 36px;
-        min-width: 36px;
+        height: 30px;
+        width: 30px;
+        min-width: 30px;
         font-size: 0;
-        /* Hide text */
         gap: 0;
         box-sizing: border-box;
+        background: none;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        border-radius: 10px;
+        color: rgba(26, 26, 46, 0.6);
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    /* Mobile glow — subtle background tint instead of shadow */
+    .shareGlow {
+        animation: mobileShareGlow 2s ease-in-out;
+    }
+
+    @keyframes mobileShareGlow {
+        0% {
+            background: none;
+            color: rgba(26, 26, 46, 0.6);
+        }
+
+        15% {
+            background: rgba(102, 126, 234, 0.12);
+            color: #667eea;
+        }
+
+        30% {
+            background: none;
+            color: rgba(26, 26, 46, 0.6);
+        }
+
+        45% {
+            background: rgba(102, 126, 234, 0.08);
+            color: #667eea;
+        }
+
+        60% {
+            background: none;
+            color: rgba(26, 26, 46, 0.6);
+        }
+
+        75% {
+            background: rgba(102, 126, 234, 0.05);
+            color: rgba(102, 126, 234, 0.7);
+        }
+
+        100% {
+            background: none;
+            color: rgba(26, 26, 46, 0.6);
+        }
+    }
+
+    .shareButton:hover,
+    .shareButton:active {
+        background: rgba(0, 0, 0, 0.05);
+        transform: none;
+        box-shadow: none;
     }
 
     .shareButton svg {
-        width: 16px;
-        height: 16px;
+        width: 15px;
+        height: 15px;
         margin: 0;
     }
 
     .buttonText {
         display: none;
-        /* Hide text on mobile */
     }
 
     .tooltip {
         display: none;
-        /* Hide tooltip on mobile (touch devices don't hover) */
     }
 
     .copiedNotification {

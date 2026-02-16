@@ -97,22 +97,34 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
     .container {
-        padding: 8px;
-        height: 36px;
+        padding: 0 6px;
+        height: 30px;
         min-width: auto;
+        background: none;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        border-radius: 0;
+    }
+
+    .container:hover {
+        box-shadow: none;
+        border-color: transparent;
     }
 
     .label {
-        display: none; /* Hide "Resets in" text on mobile */
+        display: none;
+        /* Hide "Resets in" text on mobile */
     }
 
     .timer {
-        font-size: 12px;
+        font-size: 11px;
         gap: 1px;
+        color: rgba(26, 26, 46, 0.65);
     }
 
     .timeUnit {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .timer svg {
@@ -123,30 +135,30 @@
 
     .separator {
         margin: 0;
-        font-size: 12px;
+        font-size: 11px;
     }
 }
 
 @media (max-width: 480px) {
     .container {
-        padding: 7px;
-        height: 34px;
+        padding: 0 5px;
+        height: 28px;
     }
 
     .timer {
-        font-size: 11px;
+        font-size: 10px;
     }
 
     .timeUnit {
-        font-size: 11px;
+        font-size: 10px;
     }
 
     .timer svg {
-        width: 11px;
-        height: 11px;
+        width: 10px;
+        height: 10px;
     }
 
     .separator {
-        font-size: 11px;
+        font-size: 10px;
     }
 }

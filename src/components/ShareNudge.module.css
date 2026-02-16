@@ -114,7 +114,7 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-/* ─── Animations ──────────────────────────────────────────────────── */
+/* ─── Desktop animations ─────────────────────────────────────────── */
 
 @keyframes nudgeSlideIn {
     from {
@@ -150,47 +150,176 @@
     }
 }
 
-/* ─── Mobile responsive ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE — Sleek centered pill, iOS-native feel
+   ═══════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
-    .nudge {
-        bottom: 70px;
-        right: 12px;
-        left: 12px;
+@keyframes mobileSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
     }
 
-    .nudgeContent {
-        max-width: 100%;
-        padding: 10px 12px;
-        border-radius: 14px;
-    }
-
-    .nudgeEmoji {
-        font-size: 22px;
-    }
-
-    .nudgeLabel {
-        font-size: 10px;
-    }
-
-    .nudgeCta {
-        font-size: 13px;
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }
 
-@media (max-width: 400px) {
+@keyframes mobileSlideDown {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+@media (max-width: 768px) {
     .nudge {
-        bottom: 60px;
-        right: 8px;
-        left: 8px;
+        bottom: 80px;
+        right: 0;
+        left: 0;
+        display: flex;
+        justify-content: center;
+        animation: mobileSlideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .nudgeExit {
+        animation: mobileSlideDown 0.2s ease-in forwards;
     }
 
     .nudgeContent {
-        padding: 8px 10px;
-        gap: 8px;
+        max-width: calc(100% - 32px);
+        width: auto;
+        padding: 10px 12px 10px 14px;
+        border-radius: 22px;
+        gap: 10px;
+        background: linear-gradient(135deg,
+                rgba(20, 20, 40, 0.97) 0%,
+                rgba(30, 25, 55, 0.97) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+            0 4px 20px rgba(0, 0, 0, 0.3),
+            0 0 40px rgba(102, 126, 234, 0.08);
     }
 
     .nudgeEmoji {
         font-size: 20px;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .nudgeText {
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .nudgeLabel {
+        font-size: 10px;
+        font-weight: 400;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nudgeCta {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        background-size: 200% auto;
+        border-radius: 14px;
+        text-align: center;
+        white-space: nowrap;
+        color: #fff;
+        letter-spacing: 0.2px;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+
+    .nudgeCta::after {
+        display: none;
+    }
+
+    .nudgeCta:active {
+        transform: scale(0.95);
+        opacity: 0.85;
+    }
+
+    .nudgeDismiss {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.25);
+        -webkit-tap-highlight-color: transparent;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .nudgeDismiss:active {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.5);
+    }
+}
+
+/* ─── Small phones ───────────────────────────────────────────────── */
+
+@media (max-width: 400px) {
+    .nudge {
+        bottom: 64px;
+    }
+
+    .nudgeContent {
+        max-width: calc(100% - 20px);
+        padding: 8px 10px 8px 12px;
+        border-radius: 18px;
+        gap: 8px;
+    }
+
+    .nudgeEmoji {
+        font-size: 18px;
+        width: 30px;
+        height: 30px;
+    }
+
+    .nudgeCta {
+        font-size: 12px;
+        padding: 5px 12px;
+        min-height: 28px;
+        border-radius: 12px;
+    }
+
+    .nudgeDismiss {
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
     }
 }

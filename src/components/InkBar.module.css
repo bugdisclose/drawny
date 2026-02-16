@@ -115,9 +115,12 @@
 /* Animations */
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -128,6 +131,7 @@
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -138,28 +142,42 @@
 @media (max-width: 768px) {
   .inkBarWrapper {
     min-width: auto;
-    padding: 0 8px;
-    height: 36px;
-    gap: 6px;
+    padding: 0 6px;
+    height: 30px;
+    gap: 5px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    border-radius: 0;
+  }
+
+  .inkBarWrapper:hover {
+    box-shadow: none;
+    border-color: transparent;
   }
 
   .iconLabel svg {
     width: 12px;
     height: 12px;
+    color: rgba(26, 26, 46, 0.5);
   }
 
   .labelText {
-    display: none; /* Hide "Ink" label on mobile to save space */
+    display: none;
+    /* Hide "Ink" label on mobile to save space */
   }
 
   .barContainer {
     height: 4px;
-    min-width: 50px; /* Ensure bar is visible */
+    min-width: 40px;
+    /* Ensure bar is visible */
   }
 
   .percentageDisplay {
-    font-size: 11px;
-    min-width: 32px;
+    font-size: 10px;
+    min-width: 28px;
+    color: rgba(26, 26, 46, 0.6);
   }
 
   .notification {
@@ -173,9 +191,9 @@
 
 @media (max-width: 480px) {
   .inkBarWrapper {
-    padding: 0 7px;
-    height: 34px;
-    gap: 5px;
+    padding: 0 5px;
+    height: 28px;
+    gap: 4px;
   }
 
   .iconLabel svg {
@@ -184,13 +202,13 @@
   }
 
   .barContainer {
-    height: 4px;
-    min-width: 45px;
+    height: 3px;
+    min-width: 35px;
   }
 
   .percentageDisplay {
-    font-size: 10px;
-    min-width: 28px;
+    font-size: 9px;
+    min-width: 24px;
   }
 
   .notification {
@@ -198,4 +216,3 @@
     padding: 6px 10px;
   }
 }
-
