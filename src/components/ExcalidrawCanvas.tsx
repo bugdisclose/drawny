@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, type MutableRefObject } from 'react';
 import dynamic from 'next/dynamic';
 import { Socket } from 'socket.io-client';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
 import { ToolType, BrushSize, SimpleColor, ServerToClientEvents, ClientToServerEvents } from '@/types';
 import { InkManager } from '@/lib/InkManager';
+import { parseViewport, buildHash, type ViewportCoordinates } from '@/lib/deepLinkUtils';
 import '@excalidraw/excalidraw/index.css';
 
 import styles from './ExcalidrawCanvas.module.css';
@@ -17,12 +18,17 @@ const Excalidraw = dynamic(
     { ssr: false }
 );
 
+/** Function type for snapshot capture, returns blob URL */
+export type CaptureSnapshotFn = () => Promise<string | null>;
+
 interface ExcalidrawCanvasProps {
     activeTool: ToolType;
     activeColor: string;
     activeSize: BrushSize;
     socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
     inkManager: InkManager | null;
+    onViewportChange?: (viewport: ViewportCoordinates) => void;
+    snapshotRef?: MutableRefObject<CaptureSnapshotFn | null>;
 }
 
 export default function ExcalidrawCanvas({
@@ -30,7 +36,9 @@ export default function ExcalidrawCanvas({
     activeColor,
     activeSize,
     socket,
-    inkManager
+    inkManager,
+    onViewportChange,
+    snapshotRef
 }: ExcalidrawCanvasProps) {
     console.log('[ExcalidrawCanvas] 🎨 Component rendering/mounting');
 
@@ -76,6 +84,68 @@ export default function ExcalidrawCanvas({
         }
     }, [excalidrawAPI]);
 
+    // Expose snapshot capture function via ref
+    // Uses canvas.toDataURL() to capture the EXACT viewport the user sees
+    useEffect(() => {
+        if (!snapshotRef) return;
+
+        snapshotRef.current = async (): Promise<string | null> => {
+            try {
+                // Find the actual Excalidraw interactive canvas in the DOM
+                // Excalidraw renders to a canvas inside .excalidraw container
+                const container = document.querySelector('.excalidraw');
+                if (!container) {
+                    console.warn('[Snapshot] Excalidraw container not found');
+                    return null;
+                }
+
+                // Excalidraw uses multiple canvases — the interactive one is the largest
+                const canvases = container.querySelectorAll('canvas');
+                if (canvases.length === 0) {
+                    console.warn('[Snapshot] No canvas elements found');
+                    return null;
+                }
+
+                // Pick the largest canvas (the main drawing canvas)
+                let mainCanvas: HTMLCanvasElement | null = null;
+                let maxArea = 0;
+                canvases.forEach((c) => {
+                    const area = c.width * c.height;
+                    if (area > maxArea) {
+                        maxArea = area;
+                        mainCanvas = c;
+                    }
+                });
+
+                if (!mainCanvas) {
+                    console.warn('[Snapshot] Could not identify main canvas');
+                    return null;
+                }
+
+                console.log('[Snapshot] Capturing viewport from canvas:',
+                    (mainCanvas as HTMLCanvasElement).width, 'x', (mainCanvas as HTMLCanvasElement).height);
+
+                // Capture the exact viewport as the user sees it
+                const dataUrl = (mainCanvas as HTMLCanvasElement).toDataURL('image/png');
+
+                // Convert data URL to blob for memory-efficient blob URL
+                const response = await fetch(dataUrl);
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                console.log('[Snapshot] ✅ Captured exact viewport, blob size:', blob.size);
+                return url;
+            } catch (error) {
+                console.error('[Snapshot] ❌ Failed to capture viewport:', error);
+                return null;
+            }
+        };
+
+        return () => {
+            if (snapshotRef) snapshotRef.current = null;
+        };
+    }, [snapshotRef, excalidrawAPI]);
+
     // Track versions of elements to avoid sending unchanged data
     const latestVersionMap = useRef<Map<string, number>>(new Map());
 
@@ -90,30 +160,14 @@ export default function ExcalidrawCanvas({
 
     // Viewport coordinates for deep linking
     const updateURLDebounceRef = useRef<NodeJS.Timeout | null>(null);
+    const onViewportChangeRef = useRef(onViewportChange);
+    onViewportChangeRef.current = onViewportChange;
 
     // Parse viewport coordinates from URL hash (lazy initializer runs only on client)
     const [initialViewport] = useState(() => {
         if (typeof window === 'undefined') return null;
-
-        const hash = window.location.hash.slice(1); // Remove '#'
-        if (!hash) return null;
-
-        const params = new URLSearchParams(hash);
-        const x = params.get('x');
-        const y = params.get('y');
-        const z = params.get('z');
-
-        if (x !== null && y !== null && z !== null) {
-            const viewport = {
-                scrollX: parseFloat(x),
-                scrollY: parseFloat(y),
-                zoom: parseFloat(z)
-            };
-            console.log('[DeepLink] Parsed initial viewport from URL:', viewport);
-            return viewport;
-        }
-        return null;
-    }); // Lazy initializer - only runs once on client, not during SSR
+        return parseViewport(window.location.hash);
+    });
 
     // Update URL hash with viewport coordinates (debounced)
     const updateURLHash = useCallback((scrollX: number, scrollY: number, zoom: number) => {
@@ -126,10 +180,15 @@ export default function ExcalidrawCanvas({
 
         // Debounce URL updates to avoid excessive history entries
         updateURLDebounceRef.current = setTimeout(() => {
-            const hash = `#x=${Math.round(scrollX)}&y=${Math.round(scrollY)}&z=${zoom.toFixed(2)}`;
+            const viewport: ViewportCoordinates = { scrollX, scrollY, zoom };
+            const hash = buildHash(viewport);
 
             // Use replaceState to avoid polluting browser history
             window.history.replaceState(null, '', hash);
+
+            // Notify parent of viewport change for share UI
+            onViewportChangeRef.current?.(viewport);
+
             console.log('[DeepLink] Updated URL:', hash);
         }, 500); // 500ms debounce
     }, []);

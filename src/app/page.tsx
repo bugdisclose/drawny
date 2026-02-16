@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSocket } from '@/hooks/useSocket';
 import { useInkManager } from '@/hooks/useInkManager';
 import { COLORS, BrushSize, ToolType, SceneInitData } from '@/types';
+import type { ViewportCoordinates } from '@/lib/deepLinkUtils';
 import Toolbar from '@/components/Toolbar';
 import CountdownTimer from '@/components/CountdownTimer';
 import ConnectionStatus from '@/components/ConnectionStatus';
@@ -25,12 +26,32 @@ const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), 
   ),
 });
 
+// Import type for snapshot function (dynamic component, so import type only)
+import type { CaptureSnapshotFn } from '@/components/ExcalidrawCanvas';
+
 export default function Home() {
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[0]);
   const [selectedSize, setSelectedSize] = useState<BrushSize>('small');
   // Initialize with a supported tool path
   const [selectedTool, setSelectedTool] = useState<ToolType>('brush');
   const [startTime, setStartTime] = useState<number | null>(null);
+  // Track current viewport for share feature
+  const [viewport, setViewport] = useState<ViewportCoordinates | null>(null);
+
+  // Snapshot ref — ExcalidrawCanvas populates this with a capture function
+  const snapshotRef = useRef<CaptureSnapshotFn | null>(null);
+
+  const handleViewportChange = useCallback((vp: ViewportCoordinates) => {
+    setViewport(vp);
+  }, []);
+
+  const handleCaptureSnapshot = useCallback(async (): Promise<string | null> => {
+    if (snapshotRef.current) {
+      return snapshotRef.current();
+    }
+    console.warn('[Page] Snapshot ref not available');
+    return null;
+  }, []);
 
   // Initialize ink manager
   const { inkState, inkManager } = useInkManager();
@@ -179,8 +200,8 @@ export default function Home() {
         {/* Ink Bar - Shows ink stamina */}
         <InkBar inkState={inkState} />
 
-        {/* Share Button - Mobile-friendly sharing */}
-        <ShareButton />
+        {/* Share Button - Mobile-friendly sharing with snapshot */}
+        <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} />
       </div>
 
       <ExcalidrawCanvas
@@ -189,6 +210,8 @@ export default function Home() {
         activeSize={selectedSize}
         socket={socket}
         inkManager={inkManager}
+        onViewportChange={handleViewportChange}
+        snapshotRef={snapshotRef}
       />
 
       <Toolbar
