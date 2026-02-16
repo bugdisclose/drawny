@@ -1,110 +1,220 @@
-# Drawny
+<p align="center">
+  <img src="public/og-image.png" alt="Drawny" width="480" />
+</p>
 
-**An anonymous, real-time, infinite collaborative drawing canvas.**
+<h1 align="center">drawny</h1>
 
-![Drawny Demo](https://github.com/bugdisclose/drawny/assets/demo.png)
+<p align="center">
+  <strong>A shared canvas for the internet. Draw with strangers, create together, watch it disappear.</strong>
+</p>
 
-> **"Visit website → instant canvas. No login, no setup. Everyone draws on the same shared canvas."**
+<p align="center">
+  <a href="https://drawny.com">drawny.com</a> · No login · No setup · Just draw
+</p>
 
-## About
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/Socket.io-realtime-white?logo=socket.io&logoColor=black" alt="Socket.io" />
+  <img src="https://img.shields.io/badge/TypeScript-strict-blue?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/PostgreSQL-archive-blue?logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" />
+</p>
 
-Drawny is an experimental "Open Collective Canvas". It embraces impermanence, creativity, and playful chaos. Users can join instantly and draw with others in real-time. The unique twist? **The canvas exists for only 24 hours.** At the end of each cycle, the artwork is archived to the gallery, and the world resets to a blank slate, ready for a new day of creation.
+---
 
-## Features
+## What is Drawny?
 
--   **🎨 Infinite Canvas**: A massive, pannable, and zoomable workspace.
--   **🚀 Zero Friction**: No login or account required. Start drawing in seconds.
--   **⚡ Real-Time Collaboration**: See strokes from other artists appear instantly as they draw.
--   **⏳ Ephemeral World**: The canvas automatically resets every 24 hours.
--   **🏛️ Gallery Archive**: Past days' creations are permanently saved and viewable in the Gallery.
--   **📱 Mobile Friendly**: Fully responsive with touch support for drawing on phones and tablets.
--   **🛡️ Chaos Control**: Rate limiting and anti-abuse measures to keep the chaos fun, not destructive.
+Drawny is a **public, anonymous, real-time collaborative canvas**. Think [r/place](https://www.reddit.com/r/place/) meets digital street art — except the wall gets wiped clean every 24 hours.
 
-## Tech Stack
+Anyone on the internet can visit and start drawing instantly. No accounts, no onboarding. You draw alongside strangers, contribute to the chaos, and then it's gone. The finished canvas is archived in the gallery, and a fresh blank slate appears for a new day.
 
--   **Frontend**: [Next.js 16](https://nextjs.org/) (App Router), React 19, HTML5 Canvas API.
--   **Styling**: CSS Modules, Tailwind-free (Vanilla CSS).
--   **Real-Time**: [Socket.io](https://socket.io/) with a custom Node.js server.
--   **Database**: [PostgreSQL](https://www.postgresql.org/) (for persistent daily archives).
--   **Language**: TypeScript.
+**The impermanence is the point.** Every stroke matters more when it won't last forever.
 
-## Getting Started
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---|---|
+| 🖌️ **Instant Drawing** | Visit → draw. Under 3 seconds to first stroke. Zero friction. |
+| � **Real-Time Multiplayer** | See other artists draw live. Every stroke syncs instantly via WebSocket. |
+| ♾️ **Infinite Canvas** | A massive pannable, zoomable world powered by [Excalidraw](https://excalidraw.com/). |
+| ⏳ **24-Hour Lifecycle** | The canvas resets daily. A live countdown shows time remaining. |
+| 🏛️ **Gallery Archive** | Past canvases are preserved forever. Browse the history of collective art. |
+| 🎨 **Ink System** | Limited ink per session adds strategic depth — every stroke costs something. |
+| 🔗 **Deep Linking** | Share exact coordinates on the canvas. Links encode position and zoom level. |
+| 📸 **Drawing Preview Share** | Share links include a screenshot of your drawing as the social media preview image. |
+| 📱 **Mobile Native Share** | On mobile, the Web Share API attaches your drawing screenshot as an image file. |
+| ↩️ **Undo / Redo** | Full history support — undo mistakes, redo what you changed your mind about. |
+| 🛡️ **Anti-Abuse** | Rate limiting and ink constraints keep the chaos fun, not destructive. |
+| 📱 **Fully Responsive** | Works on desktop, tablet, and mobile with touch drawing support. |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    Client (Browser)                   │
+│  Next.js 16 · React 19 · Excalidraw · CSS Modules    │
+└────────────────────┬─────────────────────────────────┘
+                     │ WebSocket (Socket.io)
+                     ▼
+┌──────────────────────────────────────────────────────┐
+│                Custom Node.js Server                  │
+│  server.ts · Socket.io · Stroke Broadcasting          │
+│  ┌──────────────┐  ┌──────────┐  ┌────────────────┐  │
+│  │ StrokeStorage│  │InkManager│  │  SocketServer  │  │
+│  │ (in-memory)  │  │(per-user)│  │ (real-time sync)│  │
+│  └──────┬───────┘  └──────────┘  └────────────────┘  │
+│         │                                             │
+│         ▼ Archive on reset                            │
+│  ┌──────────────┐                                     │
+│  │ PostgreSQL   │  ← Daily canvas archives            │
+│  │ (persistent) │                                     │
+│  └──────────────┘                                     │
+└──────────────────────────────────────────────────────┘
+```
+
+### Tech Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router) + [React 19](https://react.dev/)
+- **Canvas Engine**: [Excalidraw](https://excalidraw.com/) — battle-tested infinite canvas
+- **Real-Time**: [Socket.io](https://socket.io/) on a custom Node.js server
+- **Database**: [PostgreSQL](https://www.postgresql.org/) for persistent gallery archives
+- **Styling**: CSS Modules (zero framework overhead)
+- **Language**: TypeScript (strict mode)
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
--   **Node.js** (v18 or later)
--   **PostgreSQL** (Optional for local dev, required for persistent archives)
+- **Node.js** v18+
+- **PostgreSQL** (optional for local dev — required for gallery archives)
 
-### Installation
-
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/bugdisclose/drawny.git
-    cd drawny
-    ```
-
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-
-3.  Set up environment variables:
-    Create a `.env` file in the root directory (or use `.env.local`):
-
-    ```env
-    # Optional: For local development with persistent archives
-    DATABASE_URL="postgresql://user:password@localhost:5432/drawny"
-    
-    # Server Configuration
-    PORT=3000
-    NODE_ENV="development"
-    ```
-
-### Running Locally
-
-**Important:** You must run the custom server script to enable WebSocket support. Do not use `next dev` directly.
+### Install & Run
 
 ```bash
-npm run dev:socket
+git clone https://github.com/bugdisclose/drawny.git
+cd drawny
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Create a `.env` file:
 
-### Building for Production
+```env
+# Required
+PORT=3000
+
+# Optional: PostgreSQL for persistent archives
+DATABASE_URL="postgresql://user:password@localhost:5432/drawny"
+
+# Optional: Production base URL for OG images
+NEXT_PUBLIC_BASE_URL="https://drawny.com"
+```
+
+Start the dev server:
 
 ```bash
-npm run build
-npm start
+# ⚠️ Always use this command — not `next dev`
+# The custom server enables WebSocket support
+PORT=3000 npx tsx watch server.ts
 ```
 
-## Deployment
+Open [http://localhost:3000](http://localhost:3000) and start drawing.
 
-**⚠️ CRITICAL WARNING:**
-This project uses a custom Node.js server (`server.ts`) to handle WebSocket connections. **It will NOT work on Vercel, Netlify, or other serverless-only platforms.** Serverless functions cannot maintain the persistent connections required for real-time collaboration.
+---
 
-### Recommended Hosting
-You must deploy to a platform that supports **long-running Node.js processes**:
+## 🚢 Deployment
 
--   **[Render.com](https://render.com/)** (Web Service)
--   **[Railway](https://railway.app/)**
--   **[Fly.io](https://fly.io/)**
--   **DigitalOcean App Platform** or **VPS**
+> **⚠️ Important:** Drawny requires a **persistent Node.js process** for WebSocket connections. It will **not work** on serverless platforms like Vercel or Netlify.
 
-### Deployment Configuration (e.g., Render)
-1.  **Build Command**: `npm run build`
-2.  **Start Command**: `npm start`
-3.  **Environment Variables**:
-    -   `NODE_ENV`: `production`
-    -   `DATABASE_URL`: Your PostgreSQL connection string (Internal URL if supported).
+### Recommended Platforms
 
-### Database Setup (Archives)
-To ensure the daily archives persist across deployments and restarts, you **must** connect a PostgreSQL database.
-1.  Provision a PostgreSQL database.
-2.  Set the `DATABASE_URL` environment variable.
-3.  The application will automatically create the necessary tables on startup.
+| Platform | Why |
+|---|---|
+| [Render](https://render.com/) | Simple, great free tier for web services |
+| [Railway](https://railway.app/) | One-click deploy with PostgreSQL add-on |
+| [Fly.io](https://fly.io/) | Edge deployment, great latency |
+| **Any VPS** | DigitalOcean, Linode, Hetzner, AWS EC2 |
 
-*For more details on database setup, see [DATABASE_SETUP.md](DATABASE_SETUP.md).*
+### Deploy Steps
 
-## License
+1. **Build**: `npm run build`
+2. **Start**: `npm start`
+3. **Environment Variables**:
+   - `NODE_ENV=production`
+   - `DATABASE_URL` — your PostgreSQL connection string
+   - `NEXT_PUBLIC_BASE_URL` — your production URL (for OG images)
+4. Database tables are created automatically on first startup.
 
-This project is open-source and available under the **MIT License**.
+---
+
+## 📂 Project Structure
+
+```
+drawny/
+├── server.ts                  # Custom Node.js + Socket.io server
+├── src/
+│   ├── app/                   # Next.js App Router pages
+│   │   ├── page.tsx           # Main canvas page
+│   │   ├── gallery/           # Archive gallery
+│   │   ├── s/[id]/            # Dynamic share pages (OG meta)
+│   │   └── api/snapshot/      # Snapshot upload/serve API
+│   ├── components/
+│   │   ├── ExcalidrawCanvas   # Core drawing canvas
+│   │   ├── Toolbar            # Drawing tools, colors, sizes
+│   │   ├── ShareButton        # Share modal with preview
+│   │   ├── InkBar             # Ink level indicator
+│   │   ├── CountdownTimer     # 24h reset countdown
+│   │   └── WelcomeHint        # First-visit onboarding
+│   ├── lib/
+│   │   ├── SocketServer.ts    # WebSocket event handling
+│   │   ├── StrokeStorage.ts   # In-memory stroke store + archival
+│   │   ├── InkManager.ts      # Per-session ink tracking
+│   │   ├── DrawingEngine.ts   # Canvas rendering engine
+│   │   ├── DatabaseService.ts # PostgreSQL client
+│   │   └── deepLinkUtils.ts   # URL coordinate encoding
+│   └── hooks/
+│       └── useSocket.ts       # Socket.io React hook
+├── public/
+│   └── og-image.png           # Default social media preview
+└── idea.md                    # Original product spec
+```
+
+---
+
+## 🎮 How It Works
+
+1. **You visit** → Canvas loads instantly. You're assigned an anonymous session.
+2. **You draw** → Each stroke is broadcast to every connected user via WebSocket.
+3. **Ink depletes** → You have a limited ink supply. Use it wisely.
+4. **Others draw** → You see their strokes appear in real-time.
+5. **Share a spot** → Clicking "Share" captures a screenshot, uploads it, and generates a link with dynamic OG preview.
+6. **Timer hits zero** → The canvas is archived to the gallery. A fresh canvas begins.
+7. **Gallery** → Browse all past canvases and replay how they were created.
+
+---
+
+## 🤝 Design Philosophy
+
+> *"Zero friction beats features. Ephemeral > permanent. Playfulness over control. Constraints create creativity."*
+
+Drawny is intentionally minimal. There are no layers, no text tool, no shape tools. The constraints force creativity. The impermanence makes every contribution feel urgent and meaningful.
+
+The chaos is a feature, not a bug.
+
+---
+
+## 📄 License
+
+MIT — do whatever you want with it.
+
+---
+
+<p align="center">
+  <strong>drawny.com</strong> — draw with strangers.
+</p>
