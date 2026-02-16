@@ -26,8 +26,8 @@ const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), 
   ),
 });
 
-// Import type for snapshot function (dynamic component, so import type only)
-import type { CaptureSnapshotFn } from '@/components/ExcalidrawCanvas';
+// Import types for dynamic component refs
+import type { CaptureSnapshotFn, HistoryActions } from '@/components/ExcalidrawCanvas';
 
 export default function Home() {
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[0]);
@@ -40,6 +40,9 @@ export default function Home() {
 
   // Snapshot ref — ExcalidrawCanvas populates this with a capture function
   const snapshotRef = useRef<CaptureSnapshotFn | null>(null);
+
+  // History ref — ExcalidrawCanvas populates this with undo/redo functions
+  const historyRef = useRef<HistoryActions | null>(null);
 
   const handleViewportChange = useCallback((vp: ViewportCoordinates) => {
     setViewport(vp);
@@ -96,33 +99,19 @@ export default function Home() {
   }, []);
 
   const handleUndo = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform);
-    const event = new KeyboardEvent('keydown', {
-      key: 'z',
-      code: 'KeyZ',
-      ctrlKey: !isMac,
-      metaKey: isMac,
-      shiftKey: false,
-      bubbles: true,
-      cancelable: true,
-    });
-    window.dispatchEvent(event);
+    if (historyRef.current) {
+      historyRef.current.undo();
+    } else {
+      console.warn('[Page] History ref not available for undo');
+    }
   }, []);
 
   const handleRedo = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform);
-    const event = new KeyboardEvent('keydown', {
-      key: 'z',
-      code: 'KeyZ',
-      ctrlKey: !isMac,
-      metaKey: isMac,
-      shiftKey: true,
-      bubbles: true,
-      cancelable: true,
-    });
-    window.dispatchEvent(event);
+    if (historyRef.current) {
+      historyRef.current.redo();
+    } else {
+      console.warn('[Page] History ref not available for redo');
+    }
   }, []);
 
   // Keyboard shortcuts (some handled by Excalidraw, but tool switching is ours)
@@ -212,6 +201,7 @@ export default function Home() {
         inkManager={inkManager}
         onViewportChange={handleViewportChange}
         snapshotRef={snapshotRef}
+        historyRef={historyRef}
       />
 
       <Toolbar

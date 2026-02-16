@@ -21,6 +21,12 @@ const Excalidraw = dynamic(
 /** Function type for snapshot capture, returns blob URL */
 export type CaptureSnapshotFn = () => Promise<string | null>;
 
+/** Undo/redo actions exposed via ref */
+export interface HistoryActions {
+    undo: () => void;
+    redo: () => void;
+}
+
 interface ExcalidrawCanvasProps {
     activeTool: ToolType;
     activeColor: string;
@@ -29,6 +35,7 @@ interface ExcalidrawCanvasProps {
     inkManager: InkManager | null;
     onViewportChange?: (viewport: ViewportCoordinates) => void;
     snapshotRef?: MutableRefObject<CaptureSnapshotFn | null>;
+    historyRef?: MutableRefObject<HistoryActions | null>;
 }
 
 export default function ExcalidrawCanvas({
@@ -38,7 +45,8 @@ export default function ExcalidrawCanvas({
     socket,
     inkManager,
     onViewportChange,
-    snapshotRef
+    snapshotRef,
+    historyRef
 }: ExcalidrawCanvasProps) {
     console.log('[ExcalidrawCanvas] 🎨 Component rendering/mounting');
 
@@ -146,6 +154,40 @@ export default function ExcalidrawCanvas({
         };
     }, [snapshotRef, excalidrawAPI]);
 
+    // Expose undo/redo functions via ref
+    // Dispatches keyboard events to the .excalidraw container where Excalidraw listens
+    useEffect(() => {
+        if (!historyRef) return;
+
+        const dispatchToExcalidraw = (shiftKey: boolean) => {
+            const container = document.querySelector('.excalidraw');
+            if (!container) {
+                console.warn('[History] Excalidraw container not found');
+                return;
+            }
+            const isMac = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
+            const event = new KeyboardEvent('keydown', {
+                key: 'z',
+                code: 'KeyZ',
+                ctrlKey: !isMac,
+                metaKey: isMac,
+                shiftKey,
+                bubbles: true,
+                cancelable: true,
+            });
+            container.dispatchEvent(event);
+            console.log(`[History] ${shiftKey ? 'Redo' : 'Undo'} dispatched to Excalidraw container`);
+        };
+
+        historyRef.current = {
+            undo: () => dispatchToExcalidraw(false),
+            redo: () => dispatchToExcalidraw(true),
+        };
+
+        return () => {
+            if (historyRef) historyRef.current = null;
+        };
+    }, [historyRef, excalidrawAPI]);
     // Track versions of elements to avoid sending unchanged data
     const latestVersionMap = useRef<Map<string, number>>(new Map());
 
