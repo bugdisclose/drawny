@@ -247,12 +247,12 @@
 @keyframes popupIn {
     from {
         opacity: 0;
-        transform: translateY(8px) scale(0.9);
+        transform: translate(-50%, 8px) scale(0.95);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translate(-50%, 0) scale(1);
     }
 }
 
@@ -277,8 +277,9 @@
     cursor: pointer;
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
     z-index: 999;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: fabSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+    animation: fabSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
 }
 
 .fab:hover {
@@ -308,10 +309,11 @@
     padding: 6px 8px;
     z-index: 1000;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+    will-change: transform;
 }
 
 .mobileToolbar.mobileHidden {
@@ -339,7 +341,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s ease, color 0.15s ease;
     position: relative;
     flex-shrink: 0;
     -webkit-tap-highlight-color: transparent;
@@ -415,7 +417,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s ease, color 0.15s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -443,8 +445,10 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    animation: popupIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: popupIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 1001;
+    will-change: transform, opacity;
+    transform-origin: bottom center;
 }
 
 /* Arrow indicator on popup */
@@ -474,7 +478,7 @@
     border-radius: 50%;
     border: 2px solid transparent;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     -webkit-tap-highlight-color: transparent;
 }
@@ -506,7 +510,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s ease, border-color 0.15s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
