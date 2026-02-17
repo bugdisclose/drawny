@@ -661,12 +661,18 @@
     .modalOverlay {
         padding: 0;
         align-items: flex-end;
+        /* Use dvh for real mobile browsers where address bar affects vh */
+        height: 100vh;
+        height: 100dvh;
     }
 
     .modal {
         max-width: 100%;
         border-radius: 16px 16px 0 0;
         max-height: 80vh;
+        max-height: 80dvh;
+        margin-top: auto;
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     .modalHeader {
