@@ -1,146 +1,187 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   ShareNudge — Contextual share prompt
+   ShareNudge — Sleek centered pill with swipe-to-dismiss
    ═══════════════════════════════════════════════════════════════════════ */
 
 .nudge {
     position: fixed;
     bottom: 80px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 998;
-    animation: nudgeSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: auto;
-}
+    animation: pillSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-.nudgeExit {
-    animation: nudgeSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-}
-
-.nudgeContent {
+    /* Pill layout */
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(26, 26, 46, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 10px 14px;
+    padding: 8px 10px 8px 8px;
+    background: rgba(26, 26, 46, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 99px;
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.25),
+        0 8px 32px rgba(0, 0, 0, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.06),
-        0 0 20px rgba(102, 126, 234, 0.15);
-    max-width: 320px;
-}
-
-.nudgeEmoji {
-    font-size: 24px;
-    flex-shrink: 0;
-    animation: emojiPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
-}
-
-.nudgeText {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.nudgeLabel {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    max-width: calc(100vw - 32px);
     white-space: nowrap;
+    cursor: default;
+    touch-action: pan-x pan-y;
+    will-change: transform, opacity;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease;
 }
 
-.nudgeCta {
-    background: none;
-    border: none;
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0;
-    text-align: left;
-    transition: color 0.15s ease;
-    white-space: nowrap;
-    text-decoration: none;
-    position: relative;
-}
+/* ─── Emoji badge ──────────────────────────────────────────────────── */
 
-.nudgeCta::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 0;
-    height: 1px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-    transition: width 0.3s ease;
-}
-
-.nudgeCta:hover::after {
-    width: 100%;
-}
-
-.nudgeCta:hover {
-    color: #a5b4fc;
-}
-
-.nudgeCta:active {
-    transform: scale(0.97);
-}
-
-.nudgeDismiss {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 4px;
-    margin-left: 2px;
-    flex-shrink: 0;
-    transition: color 0.15s ease;
+.emojiBadge {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    animation: badgePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
 }
 
-.nudgeDismiss:hover {
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.08);
+/* ─── Text label ──────────────────────────────────────────────────── */
+
+.nudgeLabel {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
 }
 
-/* ─── Animations ──────────────────────────────────────────────────── */
+/* ─── Gradient CTA button ─────────────────────────────────────────── */
 
-@keyframes nudgeSlideIn {
+.ctaButton {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.2px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ctaButton:hover {
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+    transform: scale(1.03);
+}
+
+.ctaButton:active {
+    transform: scale(0.97);
+}
+
+/* ─── Dismiss button ──────────────────────────────────────────────── */
+
+.dismissBtn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dismissBtn:hover {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ─── Swipe hint (small bar at bottom center) ─────────────────────── */
+
+.swipeHint {
+    display: none;
+    /* Only on mobile */
+}
+
+/* ─── Exit animations ─────────────────────────────────────────────── */
+
+.exitDown {
+    animation: slideOutDown 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.exitLeft {
+    animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.exitRight {
+    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* ─── Keyframes ───────────────────────────────────────────────────── */
+
+@keyframes pillSlideUp {
     from {
         opacity: 0;
-        transform: translateX(40px) scale(0.9);
+        transform: translateX(-50%) translateY(24px) scale(0.92);
     }
 
     to {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateX(-50%) translateY(0) scale(1);
     }
 }
 
-@keyframes nudgeSlideOut {
+@keyframes slideOutDown {
     from {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateX(-50%) translateY(0);
     }
 
     to {
         opacity: 0;
-        transform: translateX(40px) scale(0.9);
+        transform: translateX(-50%) translateY(40px);
     }
 }
 
-@keyframes emojiPop {
+@keyframes slideOutLeft {
+    from {
+        opacity: 1;
+        transform: translateX(-50%);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(calc(-50% - 120px));
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(-50%);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(calc(-50% + 120px));
+    }
+}
+
+@keyframes badgePop {
     from {
         transform: scale(0);
     }
@@ -155,42 +196,58 @@
 @media (max-width: 768px) {
     .nudge {
         bottom: 70px;
-        right: 12px;
-        left: 12px;
+        gap: 8px;
+        padding: 7px 10px 7px 7px;
     }
 
-    .nudgeContent {
-        max-width: 100%;
-        padding: 10px 12px;
-        border-radius: 14px;
+    .emojiBadge {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
     }
 
-    .nudgeEmoji {
-        font-size: 22px;
+    .nudgeLabel {
+        font-size: 11px;
+    }
+
+    .ctaButton {
+        font-size: 11px;
+        padding: 5px 12px;
+    }
+
+    /* Show swipe hint on mobile */
+    .swipeHint {
+        display: block;
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 99px;
+    }
+}
+
+@media (max-width: 400px) {
+    .nudge {
+        bottom: 62px;
+        gap: 6px;
+        padding: 6px 8px 6px 6px;
+    }
+
+    .emojiBadge {
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
     }
 
     .nudgeLabel {
         font-size: 10px;
     }
 
-    .nudgeCta {
-        font-size: 13px;
-    }
-}
-
-@media (max-width: 400px) {
-    .nudge {
-        bottom: 60px;
-        right: 8px;
-        left: 8px;
-    }
-
-    .nudgeContent {
-        padding: 8px 10px;
-        gap: 8px;
-    }
-
-    .nudgeEmoji {
-        font-size: 20px;
+    .ctaButton {
+        font-size: 10px;
+        padding: 5px 10px;
     }
 }

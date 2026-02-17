@@ -176,8 +176,16 @@ export default function Home() {
         )}
       </div>
 
-      {/* Sleek Top Bar - Gallery, Timer, Ink, and Share */}
+      {/* Sleek Top Bar - Live Artists, Gallery, Timer, Ink, and Share */}
       <div className={styles.topBar}>
+        {/* Inline branding + live artists — visible on mobile only */}
+        <div className={styles.topBarLeft}>
+          <span className={styles.inlineLogo}>drawny</span>
+          <span className={styles.topBarDivider} />
+          <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
+          <span className={styles.liveCount}>{usersCount} Artists Live</span>
+        </div>
+
         <Link href="/gallery" className={styles.galleryButton}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />

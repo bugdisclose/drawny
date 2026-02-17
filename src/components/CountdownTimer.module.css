@@ -97,13 +97,25 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
     .container {
-        padding: 8px;
-        height: 36px;
+        padding: 0;
+        height: auto;
         min-width: auto;
+        background: none;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border-radius: 0;
+    }
+
+    .container:hover {
+        box-shadow: none;
+        border-color: transparent;
     }
 
     .label {
-        display: none; /* Hide "Resets in" text on mobile */
+        display: none;
+        /* Hide "Resets in" text on mobile */
     }
 
     .timer {
