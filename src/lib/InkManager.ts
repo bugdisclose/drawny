@@ -19,8 +19,8 @@ export type InkChangeCallback = (state: InkState) => void;
 
 export class InkManager {
   private currentInk: number;
-  private readonly maxInk: number = 3000; // Maximum ink in pixels (increased from 1000)
-  private readonly regenRate: number = 150; // Pixels regenerated per interval (5%)
+  private readonly maxInk: number = 12000; // Maximum ink in pixels
+  private readonly regenRate: number = 600; // Pixels regenerated per interval (5%)
   private readonly regenInterval: number = 3000; // Regeneration interval in ms (3 seconds)
   private regenTimer: NodeJS.Timeout | null = null;
   private listeners: Set<InkChangeCallback> = new Set();

@@ -30,22 +30,18 @@ export function useSocket(options: UseSocketOptions = {}) {
     const [artistCount, setArtistCount] = useState(0);
     const [isOfflineMode, setIsOfflineMode] = useState(false);
     const [isConnecting, setIsConnecting] = useState(true);
-    const connectionAttempted = useRef(false);
 
-    const {
-        onSceneInit,
-        onSceneUpdate,
-        onSceneSync,
-        onUsersCountChange,
-        onCursorUpdate,
-        onCursorRemove
-    } = options;
+    // Use refs for callbacks to avoid stale closures and prevent
+    // the effect from re-running (which would disconnect/reconnect the socket)
+    const optionsRef = useRef(options);
+    useEffect(() => {
+        optionsRef.current = options;
+    });
 
     useEffect(() => {
-        if (connectionAttempted.current) return;
-        connectionAttempted.current = true;
-
         console.log('[useSocket] Attempting socket connection...');
+
+        let fallbackTimer: NodeJS.Timeout | undefined;
 
         try {
             const socketIo: Socket<ServerToClientEvents, ClientToServerEvents> = io({
@@ -65,48 +61,48 @@ export function useSocket(options: UseSocketOptions = {}) {
                 setIsConnected(true);
                 setIsConnecting(false);
                 setIsOfflineMode(false);
-                socketIo.emit('scene:request-sync');
+                // Note: scene:request-sync is handled by ExcalidrawCanvas
+                // when it registers its listeners. The server also auto-sends
+                // scene:init on connection, which we catch below for metadata.
             });
 
             socketIo.on('disconnect', () => {
                 console.log('[useSocket] Disconnected from server');
                 setIsConnected(false);
-                setIsConnecting(false); // Can't be connecting if we just disconnected
-                // Don't switch to offline mode immediately on disconnect, wait for timeout or error
+                setIsConnecting(false);
             });
 
             socketIo.on('connect_error', (error) => {
                 console.log('[useSocket] Connection error:', error.message);
                 setIsConnecting(false);
-                // If we never connected, maybe switch to offline
                 if (!socketRef.current?.connected) {
                     setIsOfflineMode(true);
                 }
             });
 
             // Fallback timeout to stop showing connecting state if nothing happens
-            setTimeout(() => {
+            fallbackTimer = setTimeout(() => {
                 setIsConnecting(false);
             }, 5000);
 
             socketIo.on('scene:init', (data) => {
-                onSceneInit?.(data);
+                optionsRef.current.onSceneInit?.(data);
                 if (typeof data.artistCount === 'number') {
                     setArtistCount(data.artistCount);
                 }
             });
 
             socketIo.on('scene:update', (data) => {
-                onSceneUpdate?.(data);
+                optionsRef.current.onSceneUpdate?.(data);
             });
 
             socketIo.on('scene:sync', (elements) => {
-                onSceneSync?.(elements);
+                optionsRef.current.onSceneSync?.(elements);
             });
 
             socketIo.on('users:count', (count) => {
                 setUsersCount(count);
-                onUsersCountChange?.(count);
+                optionsRef.current.onUsersCountChange?.(count);
             });
 
             socketIo.on('artists:count', (count) => {
@@ -114,7 +110,7 @@ export function useSocket(options: UseSocketOptions = {}) {
             });
 
             socketIo.on('cursor:update', (cursor: CursorData) => {
-                onCursorUpdate?.({
+                optionsRef.current.onCursorUpdate?.({
                     id: cursor.userId,
                     x: cursor.x,
                     y: cursor.y,
@@ -125,18 +121,22 @@ export function useSocket(options: UseSocketOptions = {}) {
             });
 
             socketIo.on('cursor:remove', (userId: string) => {
-                onCursorRemove?.(userId);
+                optionsRef.current.onCursorRemove?.(userId);
             });
 
             return () => {
+                clearTimeout(fallbackTimer);
                 socketIo.disconnect();
             };
         } catch (error) {
             console.log('[useSocket] Failed to initialize socket', error);
             setIsConnecting(false);
             setIsOfflineMode(true);
+            return () => {
+                clearTimeout(fallbackTimer);
+            };
         }
-    }, [onSceneInit, onSceneUpdate, onSceneSync, onUsersCountChange, onCursorUpdate, onCursorRemove]);
+    }, []);
 
     const sendSceneUpdate = useCallback((elements: readonly ExcalidrawElement[]) => {
         if (socketRef.current?.connected) {
@@ -157,7 +157,7 @@ export function useSocket(options: UseSocketOptions = {}) {
     }, []);
 
     const reconnect = useCallback(() => {
-        setIsConnecting(true); // Set connecting state when manually reconnecting
+        setIsConnecting(true);
         if (socketRef.current) {
             socketRef.current.connect();
         }

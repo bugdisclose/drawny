@@ -50,6 +50,11 @@ class StrokeStorage {
         return Array.from(this.elements.values());
     }
 
+    // Get element count without creating a full array copy
+    getElementCount(): number {
+        return this.elements.size;
+    }
+
     // Check if canvas should reset
     shouldReset(): boolean {
         return Date.now() - this.canvasStartTime >= this.resetIntervalMs;

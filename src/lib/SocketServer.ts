@@ -60,10 +60,8 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
         // Handle scene updates (incremental or batch)
         socket.on('scene:update', (elements) => {
             if (elements && Array.isArray(elements)) {
-                console.log('[SocketServer] Received scene:update from', socket.id, 'with', elements.length, 'elements');
                 // Update storage
                 strokeStorage.updateElements(elements);
-                console.log('[SocketServer] Storage now has', strokeStorage.getAllElements().length, 'total elements');
 
                 // Track unique artist — only broadcast when it's a NEW session
                 const isNewArtist = strokeStorage.markSessionAsDrawn(socket.id);

@@ -27,6 +27,26 @@ export interface HistoryActions {
     redo: () => void;
 }
 
+// Pure function — no component state/props needed, so defined outside to avoid
+// re-creation on every render and to keep it out of useCallback dependency lists.
+function calculateElementLength(element: ExcalidrawElement): number {
+    if (element.type === 'freedraw' || element.type === 'line' || element.type === 'arrow') {
+        const points = (element as any).points || [];
+        let length = 0;
+        for (let i = 1; i < points.length; i++) {
+            const dx = points[i][0] - points[i - 1][0];
+            const dy = points[i][1] - points[i - 1][1];
+            length += Math.sqrt(dx * dx + dy * dy);
+        }
+        return length;
+    } else if (element.type === 'rectangle' || element.type === 'diamond' || element.type === 'ellipse') {
+        const width = element.width || 0;
+        const height = element.height || 0;
+        return 2 * (width + height);
+    }
+    return 0;
+}
+
 interface ExcalidrawCanvasProps {
     activeTool: ToolType;
     activeColor: string;
@@ -48,8 +68,6 @@ export default function ExcalidrawCanvas({
     snapshotRef,
     historyRef
 }: ExcalidrawCanvasProps) {
-    console.log('[ExcalidrawCanvas] 🎨 Component rendering/mounting');
-
     const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
     // Ref to access API in socket handlers without stale closures
     const excalidrawAPIRef = useRef<any>(null);
@@ -72,23 +90,10 @@ export default function ExcalidrawCanvas({
     // Track last valid scene state (before ink depletion)
     const lastValidElements = useRef<readonly ExcalidrawElement[]>([]);
 
-    // Log component mount
-    useEffect(() => {
-        console.log('[ExcalidrawCanvas] 🚀 Component MOUNTED');
-        return () => {
-            console.log('[ExcalidrawCanvas] 💀 Component UNMOUNTING');
-        };
-    }, []);
-
     // Log when API becomes available
     useEffect(() => {
         if (excalidrawAPI) {
-            console.log('[Excalidraw] ✅ API is now available!');
-            const currentElements = excalidrawAPI.getSceneElements();
-            console.log('[Excalidraw] Current scene has', currentElements.length, 'elements');
-            console.log('[Excalidraw] Pending sync has', pendingSync.current ? pendingSync.current.length : 0, 'elements');
-        } else {
-            console.log('[Excalidraw] ⏳ API is NOT available yet');
+            console.log('[Excalidraw] API is now available');
         }
     }, [excalidrawAPI]);
 
@@ -99,15 +104,12 @@ export default function ExcalidrawCanvas({
 
         snapshotRef.current = async (): Promise<string | null> => {
             try {
-                // Find the actual Excalidraw interactive canvas in the DOM
-                // Excalidraw renders to a canvas inside .excalidraw container
                 const container = document.querySelector('.excalidraw');
                 if (!container) {
                     console.warn('[Snapshot] Excalidraw container not found');
                     return null;
                 }
 
-                // Excalidraw uses multiple canvases — the interactive one is the largest
                 const canvases = container.querySelectorAll('canvas');
                 if (canvases.length === 0) {
                     console.warn('[Snapshot] No canvas elements found');
@@ -130,9 +132,6 @@ export default function ExcalidrawCanvas({
                     return null;
                 }
 
-                console.log('[Snapshot] Capturing viewport from canvas:',
-                    (mainCanvas as HTMLCanvasElement).width, 'x', (mainCanvas as HTMLCanvasElement).height);
-
                 // Capture the exact viewport as the user sees it
                 const dataUrl = (mainCanvas as HTMLCanvasElement).toDataURL('image/png');
 
@@ -141,10 +140,9 @@ export default function ExcalidrawCanvas({
                 const blob = await response.blob();
                 const url = URL.createObjectURL(blob);
 
-                console.log('[Snapshot] ✅ Captured exact viewport, blob size:', blob.size);
                 return url;
             } catch (error) {
-                console.error('[Snapshot] ❌ Failed to capture viewport:', error);
+                console.error('[Snapshot] Failed to capture viewport:', error);
                 return null;
             }
         };
@@ -161,10 +159,7 @@ export default function ExcalidrawCanvas({
 
         const dispatchToExcalidraw = (shiftKey: boolean) => {
             const container = document.querySelector('.excalidraw');
-            if (!container) {
-                console.warn('[History] Excalidraw container not found');
-                return;
-            }
+            if (!container) return;
             const isMac = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
             const event = new KeyboardEvent('keydown', {
                 key: 'z',
@@ -176,7 +171,6 @@ export default function ExcalidrawCanvas({
                 cancelable: true,
             });
             container.dispatchEvent(event);
-            console.log(`[History] ${shiftKey ? 'Redo' : 'Undo'} dispatched to Excalidraw container`);
         };
 
         historyRef.current = {
@@ -197,13 +191,46 @@ export default function ExcalidrawCanvas({
     // Flag to prevent other effects from interfering with initial load
     const hasInitialized = useRef(false);
 
-    // Collaborators state
-    const [collaborators, setCollaborators] = useState<Map<string, { pointer: { x: number; y: number }; username?: string; color?: string }>>(new Map());
+    // Collaborators managed via ref + rAF to avoid re-rendering the entire component
+    // on every cursor:update event (which fires 30+ times/sec per remote user).
+    const collaboratorsRef = useRef<Map<string, { pointer: { x: number; y: number }; username?: string; color?: string }>>(new Map());
+    const collaboratorsDirtyRef = useRef(false);
+    const collaboratorRafIdRef = useRef(0);
+
+    // Flush collaborators to Excalidraw via requestAnimationFrame (batched)
+    const flushCollaborators = useCallback(() => {
+        if (collaboratorsDirtyRef.current) return; // already scheduled
+        collaboratorsDirtyRef.current = true;
+        collaboratorRafIdRef.current = requestAnimationFrame(() => {
+            collaboratorsDirtyRef.current = false;
+            const api = excalidrawAPIRef.current;
+            if (api) {
+                api.updateScene({ collaborators: new Map(collaboratorsRef.current) as any });
+            }
+        });
+    }, []);
+
+    // Sync collaborators when API first becomes available
+    useEffect(() => {
+        if (!excalidrawAPI) return;
+        if (collaboratorsRef.current.size > 0) {
+            excalidrawAPI.updateScene({ collaborators: new Map(collaboratorsRef.current) as any });
+        }
+    }, [excalidrawAPI]);
+
+    // Clean up rAF on unmount
+    useEffect(() => {
+        return () => {
+            cancelAnimationFrame(collaboratorRafIdRef.current);
+        };
+    }, []);
 
     // Viewport coordinates for deep linking
     const updateURLDebounceRef = useRef<NodeJS.Timeout | null>(null);
     const onViewportChangeRef = useRef(onViewportChange);
-    onViewportChangeRef.current = onViewportChange;
+    useEffect(() => {
+        onViewportChangeRef.current = onViewportChange;
+    });
 
     // Parse viewport coordinates from URL hash (lazy initializer runs only on client)
     const [initialViewport] = useState(() => {
@@ -215,24 +242,16 @@ export default function ExcalidrawCanvas({
     const updateURLHash = useCallback((scrollX: number, scrollY: number, zoom: number) => {
         if (typeof window === 'undefined') return;
 
-        // Clear existing timeout
         if (updateURLDebounceRef.current) {
             clearTimeout(updateURLDebounceRef.current);
         }
 
-        // Debounce URL updates to avoid excessive history entries
         updateURLDebounceRef.current = setTimeout(() => {
             const viewport: ViewportCoordinates = { scrollX, scrollY, zoom };
             const hash = buildHash(viewport);
-
-            // Use replaceState to avoid polluting browser history
             window.history.replaceState(null, '', hash);
-
-            // Notify parent of viewport change for share UI
             onViewportChangeRef.current?.(viewport);
-
-            console.log('[DeepLink] Updated URL:', hash);
-        }, 500); // 500ms debounce
+        }, 500);
     }, []);
 
     // Calculate stroke width based on size
@@ -247,24 +266,21 @@ export default function ExcalidrawCanvas({
 
     // Clear Excalidraw's localStorage on mount to prevent it from restoring the last tool
     useEffect(() => {
-        // Clear the activeTool from Excalidraw's localStorage
         try {
             const excalidrawKeys = Object.keys(localStorage).filter(key => key.startsWith('excalidraw'));
             excalidrawKeys.forEach(key => {
                 if (key.includes('appState') || key.includes('activeTool')) {
-                    console.log('[Excalidraw] Clearing localStorage key:', key);
                     localStorage.removeItem(key);
                 }
             });
         } catch (e) {
             console.warn('[Excalidraw] Failed to clear localStorage:', e);
         }
-    }, []); // Run only once on mount
+    }, []);
 
     // When initialElements changes, mark as initialized (after first remount)
     useEffect(() => {
         if (initialElements && initialElements.length > 0) {
-            console.log('[Excalidraw] Initial elements loaded:', initialElements.length);
             hasInitialized.current = true;
         }
     }, [initialElements]);
@@ -280,7 +296,6 @@ export default function ExcalidrawCanvas({
 
         // IMPORTANT: Get current elements FIRST to preserve them
         const currentElements = excalidrawAPI.getSceneElements();
-        console.log('[Excalidraw] Syncing props - preserving', currentElements.length, 'elements');
 
         // Update styling state - MUST pass elements to preserve them
         excalidrawAPI.updateScene({
@@ -308,14 +323,11 @@ export default function ExcalidrawCanvas({
         const tool = activeTool === 'brush' ? 'freedraw' :
             activeTool === 'eraser' ? 'eraser' : 'selection';
 
-        console.log('[Excalidraw] Setting active tool to:', tool, '(from activeTool:', activeTool + ')');
-
         // Set immediately
         excalidrawAPI.setActiveTool({ type: tool });
 
         // Also set with a delay to override any localStorage restoration
         const timeoutId = setTimeout(() => {
-            console.log('[Excalidraw] Re-setting active tool after delay to:', tool);
             excalidrawAPI.setActiveTool({ type: tool });
         }, 100);
 
@@ -327,12 +339,8 @@ export default function ExcalidrawCanvas({
     useEffect(() => {
         if (!excalidrawAPI || hasSetInitialViewport.current || !initialViewport) return;
 
-        console.log('[DeepLink] Setting initial viewport from URL:', initialViewport);
-
-        // Mark as set to prevent re-running
         hasSetInitialViewport.current = true;
 
-        // Use a small delay to ensure Excalidraw is fully initialized
         setTimeout(() => {
             const currentElements = excalidrawAPI.getSceneElements();
             excalidrawAPI.updateScene({
@@ -340,7 +348,7 @@ export default function ExcalidrawCanvas({
                 appState: {
                     scrollX: initialViewport.scrollX,
                     scrollY: initialViewport.scrollY,
-                    zoom: { value: initialViewport.zoom as any } // Cast to satisfy type
+                    zoom: { value: initialViewport.zoom as any }
                 }
             });
         }, 100);
@@ -350,11 +358,10 @@ export default function ExcalidrawCanvas({
     useEffect(() => {
         if (!socket) return;
 
-        console.log('[Socket] 🔌 Setting up socket listeners. Socket ID:', socket.id);
+        console.log('[Socket] Setting up socket listeners. Socket ID:', socket.id);
 
         // Initial sync handler - Use state to trigger remount with correct data
         const onSceneInit = (data: { elements: readonly ExcalidrawElement[] } | readonly ExcalidrawElement[]) => {
-            console.log('[Excalidraw] 📥 scene:init received! Timestamp:', new Date().toISOString());
             let elements: readonly ExcalidrawElement[];
 
             if (Array.isArray(data)) {
@@ -362,34 +369,22 @@ export default function ExcalidrawCanvas({
             } else if ('elements' in data) {
                 elements = data.elements;
             } else {
-                console.error('[Excalidraw] Invalid scene data received:', data);
+                console.error('[Excalidraw] Invalid scene data received');
                 return;
             }
 
             console.log('[Excalidraw] Scene init/sync received:', elements.length, 'elements');
-            if (elements.length > 0) {
-                const visibleElements = elements.filter(e => !e.isDeleted);
-                const visibleCount = visibleElements.length;
-                console.log('[Excalidraw] Visible elements:', visibleCount, '/', elements.length);
-                if (visibleCount > 0) {
-                    const first = visibleElements[0];
-                    console.log('[Excalidraw] First VISIBLE element at:', first.x, first.y, 'type:', first.type);
-                }
-            }
 
             // Update version map for fresh sync
             latestVersionMap.current.clear();
             elementLengthMap.current.clear();
             elements.forEach(el => {
                 latestVersionMap.current.set(el.id, el.version);
-
-                // Initialize element length map to prevent consuming ink for existing elements
                 const length = calculateElementLength(el);
                 elementLengthMap.current.set(el.id, length);
             });
 
             // Set initial elements and force Excalidraw remount
-            console.log('[Excalidraw] Setting initialElements and forcing remount');
             setInitialElements([...elements] as ExcalidrawElement[]);
             setExcalidrawKey(prev => prev + 1);
         };
@@ -400,7 +395,7 @@ export default function ExcalidrawCanvas({
 
             const api = excalidrawAPIRef.current;
             if (api) {
-                // First, filter for newer elements (don't update version map yet)
+                // Filter for newer elements
                 const newerElements: ExcalidrawElement[] = [];
                 data.elements.forEach(el => {
                     const localVer = latestVersionMap.current.get(el.id) || 0;
@@ -410,12 +405,9 @@ export default function ExcalidrawCanvas({
                 });
 
                 if (newerElements.length > 0) {
-                    console.log('[Excalidraw] Live update:', newerElements.length, 'new/updated elements from', data.userId);
-
                     // Update version map and element length map BEFORE setting the flag to prevent re-emission
                     newerElements.forEach(el => {
                         latestVersionMap.current.set(el.id, el.version);
-                        // Update element length to prevent consuming ink for remote changes
                         const length = calculateElementLength(el);
                         elementLengthMap.current.set(el.id, length);
                     });
@@ -426,75 +418,54 @@ export default function ExcalidrawCanvas({
                     const currentSceneElements = api.getSceneElements();
                     const mergedElementsMap = new Map<string, ExcalidrawElement>();
 
-                    // Add current elements
                     currentSceneElements.forEach((el: ExcalidrawElement) => mergedElementsMap.set(el.id, el));
-
-                    // Update with newer elements
                     newerElements.forEach((el: ExcalidrawElement) => mergedElementsMap.set(el.id, el));
 
                     api.updateScene({ elements: Array.from(mergedElementsMap.values()) });
 
-                    // Reset flag after a very short delay - just enough to skip the immediate onChange
-                    // but not so long that it blocks legitimate user drawing
+                    // Reset flag after a very short delay
                     setTimeout(() => {
                         isRemoteUpdate.current = false;
                     }, 10);
                 }
-            } else {
-                console.log('[Excalidraw] Live update received but API not ready, ignoring');
             }
         };
 
-        console.log('[Socket] 🔌 Setting up socket listeners');
-        console.log('[Socket] Socket ID:', socket.id);
-        console.log('[Socket] excalidrawAPI available?', !!excalidrawAPI);
-
         socket.on('scene:init', onSceneInit);
-        socket.on('scene:sync', onSceneInit); // Handle sync response same as init
+        socket.on('scene:sync', onSceneInit);
         socket.on('scene:update', onSceneUpdate);
 
-        // Cursor handlers
+        // Cursor handlers — update ref directly, flush via rAF (no React state updates)
         const onCursorUpdate = (cursor: { userId: string; x: number; y: number; color: string; userName?: string }) => {
-            // skip own cursor if it comes back
             if (cursor.userId === socket.id) return;
 
-            setCollaborators(prev => {
-                const next = new Map(prev);
-                next.set(cursor.userId, {
-                    pointer: { x: cursor.x, y: cursor.y },
-                    username: cursor.userName || 'User',
-                    color: cursor.color
-                });
-                return next;
+            collaboratorsRef.current.set(cursor.userId, {
+                pointer: { x: cursor.x, y: cursor.y },
+                username: cursor.userName || 'User',
+                color: cursor.color
             });
+            flushCollaborators();
         };
 
         const onCursorRemove = (userId: string) => {
-            setCollaborators(prev => {
-                const next = new Map(prev);
-                next.delete(userId);
-                return next;
-            });
+            collaboratorsRef.current.delete(userId);
+            flushCollaborators();
         };
 
         socket.on('cursor:update', onCursorUpdate);
         socket.on('cursor:remove', onCursorRemove);
 
-        console.log('[Socket] ✅ All socket listeners registered');
-
         // Request initial state AFTER listeners are registered to avoid race condition
-        console.log('[Socket] 📤 Requesting scene sync from server');
         socket.emit('scene:request-sync');
 
         return () => {
-            console.log('[Socket] 🔌 Cleaning up socket listeners');
             socket.off('scene:init', onSceneInit);
             socket.off('scene:sync', onSceneInit);
             socket.off('scene:update', onSceneUpdate);
             socket.off('cursor:update', onCursorUpdate);
             socket.off('cursor:remove', onCursorRemove);
         };
-    }, [socket]); // Removed excalidrawAPI dependency to avoid re-registering listeners
+    }, [socket, flushCollaborators]);
 
     // Random Name Generator
     const [userName] = useState(() => {
@@ -505,8 +476,9 @@ export default function ExcalidrawCanvas({
         return `${adj} ${noun}`;
     });
 
-    // Handle local pointer updates
-    const onPointerUpdate = (payload: { pointer: { x: number; y: number }; button: 'down' | 'up'; pointersMap: Map<number, Readonly<{ x: number; y: number }>> }) => {
+    // Handle local pointer updates — memoized to avoid giving Excalidraw a new
+    // function reference on every render (which could trigger internal work).
+    const onPointerUpdate = useCallback((payload: { pointer: { x: number; y: number }; button: 'down' | 'up'; pointersMap: Map<number, Readonly<{ x: number; y: number }>> }) => {
         if (!socket) return;
         socket.emit('cursor:move', {
             userId: socket.id || 'unknown',
@@ -515,51 +487,15 @@ export default function ExcalidrawCanvas({
             color: activeColor,
             userName: userName
         });
-    };
+    }, [socket, activeColor, userName]);
 
-    // Calculate approximate length of an element for ink consumption
-    const calculateElementLength = (element: ExcalidrawElement): number => {
-        if (element.type === 'freedraw') {
-            // For freedraw, calculate total path length
-            const points = (element as any).points || [];
-            let length = 0;
-            for (let i = 1; i < points.length; i++) {
-                const dx = points[i][0] - points[i - 1][0];
-                const dy = points[i][1] - points[i - 1][1];
-                length += Math.sqrt(dx * dx + dy * dy);
-            }
-            return length;
-        } else if (element.type === 'line' || element.type === 'arrow') {
-            // For lines/arrows, calculate distance between points
-            const points = (element as any).points || [];
-            let length = 0;
-            for (let i = 1; i < points.length; i++) {
-                const dx = points[i][0] - points[i - 1][0];
-                const dy = points[i][1] - points[i - 1][1];
-                length += Math.sqrt(dx * dx + dy * dy);
-            }
-            return length;
-        } else if (element.type === 'rectangle' || element.type === 'diamond' || element.type === 'ellipse') {
-            // For shapes, use perimeter approximation
-            const width = element.width || 0;
-            const height = element.height || 0;
-            return 2 * (width + height);
-        }
-        return 0;
-    };
-
-    // Handle local changes
-    const onChange = (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
-        // If this change was triggered by a remote update, ignore it
-        if (isRemoteUpdate.current) {
-            return;
-        }
-
+    // Handle local changes — memoized and sends only changed elements (not the full scene).
+    const onChange = useCallback((elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
+        if (isRemoteUpdate.current) return;
         if (!socket) return;
 
         // Check if user has ink before allowing new drawing elements
         if (inkManager && !inkManager.canDraw()) {
-            // Find new drawing elements (not in lastValidElements)
             const lastValidIds = new Set(lastValidElements.current.map(el => el.id));
             const newDrawingElements = elements.filter(el => {
                 const isDrawingElement = el.type === 'freedraw' || el.type === 'line' ||
@@ -568,9 +504,7 @@ export default function ExcalidrawCanvas({
                 return isDrawingElement && !lastValidIds.has(el.id);
             });
 
-            // If there are new drawing elements and no ink, revert the scene
             if (newDrawingElements.length > 0 && excalidrawAPI) {
-                console.log('[Excalidraw] ❌ Out of ink! Preventing new drawing elements.');
                 isRemoteUpdate.current = true;
                 excalidrawAPI.updateScene({
                     elements: lastValidElements.current as ExcalidrawElement[]
@@ -578,7 +512,7 @@ export default function ExcalidrawCanvas({
                 setTimeout(() => {
                     isRemoteUpdate.current = false;
                 }, 0);
-                return; // Don't process this change
+                return;
             }
         }
 
@@ -592,7 +526,6 @@ export default function ExcalidrawCanvas({
             // Track ink consumption for new/modified drawing elements
             if (inkManager) {
                 for (const el of changedElements) {
-                    // Only consume ink for drawing tools (not selection, text, etc.)
                     if (el.type === 'freedraw' || el.type === 'line' || el.type === 'arrow' ||
                         el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse') {
 
@@ -604,8 +537,6 @@ export default function ExcalidrawCanvas({
                             const canConsume = inkManager.consumeInk(deltaLength);
 
                             if (!canConsume) {
-                                // Out of ink during drawing - revert to last valid state
-                                console.log('[Excalidraw] ❌ Ran out of ink during drawing! Reverting.');
                                 if (excalidrawAPI) {
                                     isRemoteUpdate.current = true;
                                     excalidrawAPI.updateScene({
@@ -615,36 +546,29 @@ export default function ExcalidrawCanvas({
                                         isRemoteUpdate.current = false;
                                     }, 0);
                                 }
-                                return; // Don't process this change
+                                return;
                             }
 
-                            // Update tracked length
                             elementLengthMap.current.set(el.id, currentLength);
                         }
                     }
                 }
             }
 
-            console.log(`[Excalidraw] Emitting ${changedElements.length} changed elements out of ${elements.length} total`);
             // Update local version map
             changedElements.forEach(el => {
                 latestVersionMap.current.set(el.id, el.version);
             });
 
-            // Store this as the last valid state (only if we successfully consumed ink or no ink was needed)
+            // Store this as the last valid state
             lastValidElements.current = elements;
 
-            // IMPORTANT: Send ALL elements, not just changed ones
-            // This ensures the server has the complete state including deletions
-            socket.emit('scene:update', elements);
+            // Send only changed elements — the server does upsert, so partial
+            // updates are correct. This avoids sending the entire scene (potentially
+            // thousands of elements) on every mouse stroke.
+            socket.emit('scene:update', changedElements);
         }
-    };
-
-    // Sync collaborators to Excalidraw
-    useEffect(() => {
-        if (!excalidrawAPI) return;
-        excalidrawAPI.updateScene({ collaborators: collaborators as any });
-    }, [excalidrawAPI, collaborators]);
+    }, [socket, inkManager, excalidrawAPI]);
 
     // Handle viewport changes for deep linking
     const onScrollChange = useCallback((scrollX: number, scrollY: number, zoom: { value: number }) => {
@@ -668,7 +592,7 @@ export default function ExcalidrawCanvas({
                 onChange={onChange}
                 onScrollChange={onScrollChange}
                 viewModeEnabled={activeTool === 'hand'}
-                zenModeEnabled={false} // We handle UI hiding via CSS
+                zenModeEnabled={false}
                 gridModeEnabled={false}
                 theme="light"
                 name="Drawny Canvas"
