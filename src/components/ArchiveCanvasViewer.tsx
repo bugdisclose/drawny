@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
@@ -26,14 +26,70 @@ interface ArchiveCanvasViewerProps {
 }
 
 export default function ArchiveCanvasViewer({ strokes }: ArchiveCanvasViewerProps) {
-    const [elements, setElements] = useState<ExcalidrawElement[]>([]);
+    const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
 
-    useEffect(() => {
-        if (strokes && Array.isArray(strokes)) {
-            // Cast to ExcalidrawElement[] for usage
-            setElements(strokes as ExcalidrawElement[]);
+    // Safely parse and validate elements from props
+    const elements = useMemo<ExcalidrawElement[]>(() => {
+        let raw = strokes;
+        // Handle double-encoded JSON string
+        if (typeof raw === 'string') {
+            try {
+                raw = JSON.parse(raw);
+            } catch {
+                return [];
+            }
         }
+        if (raw && Array.isArray(raw)) {
+            return raw.filter((el: any) => !el.isDeleted) as ExcalidrawElement[];
+        }
+        return [];
     }, [strokes]);
+
+    // Once both the API and elements are ready, push elements via updateScene.
+    // This avoids the blank-on-first-load bug where initialData is consumed
+    // before the dynamic import resolves, leaving the canvas empty.
+    useEffect(() => {
+        if (!excalidrawAPI || elements.length === 0) return;
+        excalidrawAPI.updateScene({ elements });
+        // Scroll to content after a short delay to let Excalidraw layout
+        setTimeout(() => {
+            excalidrawAPI.scrollToContent(elements, { fitToContent: true });
+        }, 100);
+    }, [excalidrawAPI, elements]);
+
+    const onExcalidrawAPI = useCallback((api: any) => {
+        setExcalidrawAPI(api);
+    }, []);
+
+    if (elements.length === 0) {
+        return (
+            <div style={{
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                fontFamily: 'Inter, sans-serif',
+                color: '#666',
+                gap: '16px'
+            }}>
+                <div style={{ fontSize: '48px' }}>:/</div>
+                <div style={{ fontSize: '18px' }}>This archive is empty or corrupted</div>
+                <Link href="/gallery" style={{
+                    marginTop: '16px',
+                    padding: '10px 20px',
+                    background: '#1a1a2e',
+                    color: 'white',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    fontWeight: 500
+                }}>
+                    Back to Gallery
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -47,6 +103,7 @@ export default function ArchiveCanvasViewer({ strokes }: ArchiveCanvasViewerProp
                             currentItemBackgroundColor: 'transparent',
                         }
                     }}
+                    excalidrawAPI={onExcalidrawAPI}
                     viewModeEnabled={true}
                     zenModeEnabled={true}
                     gridModeEnabled={false}
@@ -60,7 +117,7 @@ export default function ArchiveCanvasViewer({ strokes }: ArchiveCanvasViewerProp
                             loadScene: false,
                             saveToActiveFile: false,
                             toggleTheme: false,
-                            saveAsImage: true, // Allow saving image
+                            saveAsImage: true,
                         },
                     }}
                 />

@@ -91,8 +91,20 @@ class DatabaseService {
         }
     }
 
+    /**
+     * Retry table creation if the pool exists but initial setup failed
+     * (e.g., transient network error at startup). This avoids requiring
+     * a full server restart when the database recovers.
+     */
+    private async ensureInitialized(): Promise<boolean> {
+        if (this.isInitialized) return true;
+        if (!this.pool) return false;
+        await this.createTablesIfNeeded();
+        return this.isInitialized;
+    }
+
     async saveArchive(archiveData: ArchiveData): Promise<boolean> {
-        if (!this.pool || !this.isInitialized) {
+        if (!this.pool || !(await this.ensureInitialized())) {
             console.warn('[DatabaseService] Database not available, skipping archive save');
             return false;
         }
@@ -128,7 +140,7 @@ class DatabaseService {
     }
 
     async getArchive(id: string): Promise<ArchiveData | null> {
-        if (!this.pool || !this.isInitialized) {
+        if (!this.pool || !(await this.ensureInitialized())) {
             return null;
         }
 
@@ -143,6 +155,23 @@ class DatabaseService {
             }
 
             const row = result.rows[0];
+
+            // Safe-parse strokes: handle double-encoded JSON, null, or non-array values
+            let strokes: Stroke[] = [];
+            try {
+                let raw = row.strokes;
+                if (typeof raw === 'string') {
+                    raw = JSON.parse(raw);
+                }
+                if (Array.isArray(raw)) {
+                    // Filter out deleted elements — they shouldn't appear in archives
+                    strokes = raw.filter((el: any) => !el.isDeleted);
+                }
+            } catch {
+                console.warn('[DatabaseService] Failed to parse strokes for archive:', row.id);
+                strokes = [];
+            }
+
             return {
                 id: row.id,
                 date: row.date,
@@ -150,7 +179,7 @@ class DatabaseService {
                 end_time: row.end_time,
                 stroke_count: row.stroke_count,
                 artist_count: row.artist_count ?? 0,
-                strokes: row.strokes
+                strokes
             };
         } catch (err) {
             console.error('[DatabaseService] ❌ Failed to get archive:', err);
@@ -159,7 +188,7 @@ class DatabaseService {
     }
 
     async getAllArchives(): Promise<Array<{ id: string; date: string; stroke_count: number; artist_count: number }>> {
-        if (!this.pool || !this.isInitialized) {
+        if (!this.pool || !(await this.ensureInitialized())) {
             return [];
         }
 

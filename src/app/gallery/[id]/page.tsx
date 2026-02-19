@@ -10,6 +10,25 @@ interface PageProps {
     }>;
 }
 
+/**
+ * Parse strokes safely: handles double-encoded JSON strings, null, and non-array values.
+ * Returns a valid array (possibly empty).
+ */
+function parseStrokes(raw: unknown): any[] {
+    let parsed = raw;
+    if (typeof parsed === 'string') {
+        try {
+            parsed = JSON.parse(parsed);
+        } catch {
+            return [];
+        }
+    }
+    if (Array.isArray(parsed)) {
+        return parsed.filter((el: any) => !el.isDeleted);
+    }
+    return [];
+}
+
 export default async function ArchivePage({ params }: PageProps) {
     const { id } = await params;
     // Sanitize ID to prevent traversal
@@ -26,7 +45,8 @@ export default async function ArchivePage({ params }: PageProps) {
 
         if (data) {
             console.log('[Archive] Found archive in database');
-            return <ArchiveCanvasViewer strokes={data.strokes} />;
+            const strokes = parseStrokes(data.strokes);
+            return <ArchiveCanvasViewer strokes={strokes} />;
         } else {
             console.log('[Archive] Archive not found in database, trying filesystem');
         }
@@ -49,5 +69,6 @@ export default async function ArchivePage({ params }: PageProps) {
         notFound();
     }
 
-    return <ArchiveCanvasViewer strokes={data.strokes} />;
+    const strokes = parseStrokes(data.strokes);
+    return <ArchiveCanvasViewer strokes={strokes} />;
 }

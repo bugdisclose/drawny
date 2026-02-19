@@ -109,15 +109,28 @@ export default async function GalleryPage() {
                                 }}>
                                     <div style={{
                                         height: '200px',
-                                        background: '#f0f0f0',
+                                        background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
                                         display: 'flex',
+                                        flexDirection: 'column',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        color: '#999',
-                                        fontSize: '14px'
+                                        gap: '12px',
+                                        color: '#888'
                                     }}>
-                                        {/* Placeholder for thumbnail - we render strokes in detail view */}
-                                        Preview
+                                        <div style={{
+                                            fontSize: '36px',
+                                            lineHeight: 1,
+                                            opacity: Math.min(0.3 + (archive.strokeCount / 200), 1)
+                                        }}>
+                                            {archive.strokeCount > 100 ? '🎨' : archive.strokeCount > 20 ? '✏️' : '🖊️'}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '13px',
+                                            fontWeight: 500,
+                                            color: '#aaa'
+                                        }}>
+                                            {archive.strokeCount} {archive.strokeCount === 1 ? 'element' : 'elements'}
+                                        </div>
                                     </div>
                                     <div style={{ padding: '20px' }}>
                                         <h3 style={{ margin: '0 0 8px', color: '#1a1a2e', fontSize: '18px' }}>
