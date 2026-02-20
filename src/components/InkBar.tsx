@@ -15,6 +15,7 @@ export default function InkBar({ inkState }: InkBarProps) {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const previousPercentageRef = useRef<number>(100); // Track previous percentage for transition detection
+  const wasDrainedRef = useRef(false); // Track whether ink was fully drained (hit 0%)
   const hasRequestedPermission = useRef(false);
 
   // Request notification permission on mount
@@ -41,18 +42,23 @@ export default function InkBar({ inkState }: InkBarProps) {
     setIsLow(inkState.percentage <= lowThreshold && inkState.percentage > 0);
     setIsEmpty(inkState.percentage === 0);
 
-    // Detect transition to FULL (was not full, now is full)
-    if (previousPercentage < 100 && inkState.percentage === 100) {
-      console.log('[InkBar] 🎉 Ink became full!');
+    // Track when ink is fully drained
+    if (inkState.percentage === 0) {
+      wasDrainedRef.current = true;
+    }
+
+    // Detect transition to FULL — only play sound if ink was fully drained first.
+    // This prevents the annoying ding when a small dot quickly regens back to 100%.
+    if (previousPercentage < 100 && inkState.percentage === 100 && wasDrainedRef.current) {
+      wasDrainedRef.current = false;
       playInkFullSound();
       showInkFullNotification();
-      setNotificationMessage('Ink refilled! Time to draw! 🎨');
+      setNotificationMessage('Ink refilled! Time to draw!');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 3000);
     }
     // Detect transition to EMPTY (was not empty, now is empty)
     else if (!wasEmpty && inkState.percentage === 0) {
-      console.log('[InkBar] 🔇 Ink became empty!');
       playInkEmptySound();
       setNotificationMessage('Out of ink! Please wait for regeneration...');
       setShowNotification(true);

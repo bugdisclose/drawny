@@ -71,9 +71,9 @@ export function parseViewport(hash: string): ViewportCoordinates | null {
     const y = parseFloat(yRaw);
     const z = parseFloat(zRaw);
 
-    // Validate: at least one must be a finite number
-    if (!Number.isFinite(x) && !Number.isFinite(y) && !Number.isFinite(z)) {
-      console.warn('[DeepLink] All parsed values are invalid, ignoring hash');
+    // Validate: all three must be finite numbers
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      console.warn('[DeepLink] One or more parsed values are invalid, ignoring hash');
       return null;
     }
 

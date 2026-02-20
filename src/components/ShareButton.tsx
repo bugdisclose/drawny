@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, type MutableRefObject } from 'react';
+import React, { useState, useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { buildShareUrl, buildDynamicShareUrl, formatCoordinates, type ViewportCoordinates } from '@/lib/deepLinkUtils';
 import styles from './ShareButton.module.css';
 
@@ -35,6 +35,21 @@ export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: Sh
     const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
     const [snapshotId, setSnapshotId] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
+
+    // Track the latest blob URL so we can revoke it on unmount
+    const snapshotUrlRef = useRef<string | null>(null);
+    useEffect(() => {
+        snapshotUrlRef.current = snapshotUrl;
+    }, [snapshotUrl]);
+
+    // Revoke any outstanding blob URL when the component unmounts
+    useEffect(() => {
+        return () => {
+            if (snapshotUrlRef.current) {
+                URL.revokeObjectURL(snapshotUrlRef.current);
+            }
+        };
+    }, []);
 
     // When snapshotId is available, update shareUrl to use the dynamic share page
     useEffect(() => {

@@ -7,6 +7,7 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
 import { ToolType, BrushSize, SimpleColor, ServerToClientEvents, ClientToServerEvents } from '@/types';
 import { InkManager } from '@/lib/InkManager';
+import { StreakManager } from '@/lib/StreakManager';
 import { parseViewport, buildHash, type ViewportCoordinates } from '@/lib/deepLinkUtils';
 import '@excalidraw/excalidraw/index.css';
 
@@ -53,6 +54,7 @@ interface ExcalidrawCanvasProps {
     activeSize: BrushSize;
     socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
     inkManager: InkManager | null;
+    streakManager: StreakManager | null;
     onViewportChange?: (viewport: ViewportCoordinates) => void;
     snapshotRef?: MutableRefObject<CaptureSnapshotFn | null>;
     historyRef?: MutableRefObject<HistoryActions | null>;
@@ -64,6 +66,7 @@ export default function ExcalidrawCanvas({
     activeSize,
     socket,
     inkManager,
+    streakManager,
     onViewportChange,
     snapshotRef,
     historyRef
@@ -336,6 +339,13 @@ export default function ExcalidrawCanvas({
 
     // Set initial viewport from URL hash - must be done after API is ready
     const hasSetInitialViewport = useRef(false);
+
+    // Reset viewport flag when Excalidraw remounts (key change) so the
+    // viewport gets re-applied after scene:init triggers a remount.
+    useEffect(() => {
+        hasSetInitialViewport.current = false;
+    }, [excalidrawKey]);
+
     useEffect(() => {
         if (!excalidrawAPI || hasSetInitialViewport.current || !initialViewport) return;
 
@@ -563,12 +573,23 @@ export default function ExcalidrawCanvas({
             // Store this as the last valid state
             lastValidElements.current = elements;
 
+            // Record drawing activity for streak tracking
+            if (streakManager) {
+                const hasDrawingElement = changedElements.some(el =>
+                    el.type === 'freedraw' || el.type === 'line' || el.type === 'arrow' ||
+                    el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse'
+                );
+                if (hasDrawingElement) {
+                    streakManager.recordDraw();
+                }
+            }
+
             // Send only changed elements — the server does upsert, so partial
             // updates are correct. This avoids sending the entire scene (potentially
             // thousands of elements) on every mouse stroke.
             socket.emit('scene:update', changedElements);
         }
-    }, [socket, inkManager, excalidrawAPI]);
+    }, [socket, inkManager, streakManager, excalidrawAPI]);
 
     // Handle viewport changes for deep linking
     const onScrollChange = useCallback((scrollX: number, scrollY: number, zoom: { value: number }) => {
@@ -586,6 +607,11 @@ export default function ExcalidrawCanvas({
                         viewBackgroundColor: '#ffffff',
                         currentItemStrokeColor: activeColor,
                         currentItemStrokeWidth: getStrokeWidth(activeSize),
+                        ...(initialViewport ? {
+                            scrollX: initialViewport.scrollX,
+                            scrollY: initialViewport.scrollY,
+                            zoom: { value: initialViewport.zoom as any },
+                        } : {}),
                     }
                 }}
                 onPointerUpdate={onPointerUpdate}

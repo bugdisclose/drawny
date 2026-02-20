@@ -5,13 +5,15 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSocket } from '@/hooks/useSocket';
 import { useInkManager } from '@/hooks/useInkManager';
+import { useStreak } from '@/hooks/useStreak';
 import { COLORS, BrushSize, ToolType, SceneInitData } from '@/types';
 import type { ViewportCoordinates } from '@/lib/deepLinkUtils';
 import Toolbar from '@/components/Toolbar';
 import CountdownTimer from '@/components/CountdownTimer';
 import ConnectionStatus from '@/components/ConnectionStatus';
-import WelcomeHint from '@/components/WelcomeHint';
+import OnboardingFlow from '@/components/OnboardingFlow';
 import InkBar from '@/components/InkBar';
+import StreakBadge from '@/components/StreakBadge';
 import ShareButton from '@/components/ShareButton';
 import ShareNudge from '@/components/ShareNudge';
 import styles from './page.module.css';
@@ -38,6 +40,8 @@ export default function Home() {
   const [startTime, setStartTime] = useState<number | null>(null);
   // Track current viewport for share feature
   const [viewport, setViewport] = useState<ViewportCoordinates | null>(null);
+  // Overflow menu for mobile (gallery + timer)
+  const [overflowOpen, setOverflowOpen] = useState(false);
 
   // Snapshot ref — ExcalidrawCanvas populates this with a capture function
   const snapshotRef = useRef<CaptureSnapshotFn | null>(null);
@@ -62,6 +66,9 @@ export default function Home() {
 
   // Initialize ink manager
   const { inkState, inkManager } = useInkManager();
+
+  // Initialize streak manager
+  const { streakState, streakManager } = useStreak();
 
   // Handle users count update from socket
   const handleUsersCountChange = useCallback((count: number) => {
@@ -186,20 +193,37 @@ export default function Home() {
           <span className={styles.liveCount}>{usersCount} Artists Live</span>
         </div>
 
-        <Link href="/gallery" className={styles.galleryButton}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <polyline points="21 15 16 10 5 21" />
-          </svg>
-          Gallery
-        </Link>
+        {/* Gallery + Timer: inline on desktop, overflow dropdown on mobile */}
+        <div className={`${styles.overflowGroup} ${overflowOpen ? styles.overflowOpen : ''}`}>
+          <Link href="/gallery" className={styles.galleryButton}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            Gallery
+          </Link>
+          <CountdownTimer serverStartTime={startTime} />
+        </div>
 
-        {/* Timer synced with server start time */}
-        <CountdownTimer serverStartTime={startTime} />
+        {/* Overflow toggle — mobile only */}
+        <button
+          className={`${styles.overflowToggle} ${overflowOpen ? styles.overflowToggleActive : ''}`}
+          onClick={() => setOverflowOpen(v => !v)}
+          aria-label="More options"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="5" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="12" cy="19" r="1.5" />
+          </svg>
+        </button>
 
         {/* Ink Bar - Shows ink stamina */}
         <InkBar inkState={inkState} />
+
+        {/* Streak Badge - Daily drawing streak */}
+        <StreakBadge streakState={streakState} />
 
         {/* Share Button - Mobile-friendly sharing with snapshot */}
         <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />
@@ -211,6 +235,7 @@ export default function Home() {
         activeSize={selectedSize}
         socket={socket}
         inkManager={inkManager}
+        streakManager={streakManager}
         onViewportChange={handleViewportChange}
         snapshotRef={snapshotRef}
         historyRef={historyRef}
@@ -231,7 +256,7 @@ export default function Home() {
         canRedo={true}
       />
 
-      <WelcomeHint />
+      <OnboardingFlow streakState={streakState} serverStartTime={startTime} />
 
       {/* Contextual share nudges — encourages sharing on zoom-in, drawing, multi-user */}
       <ShareNudge

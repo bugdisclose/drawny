@@ -204,6 +204,18 @@
   opacity: 0.7;
 }
 
+/* Overflow group — wraps gallery + timer (inline on desktop, dropdown on mobile) */
+.overflowGroup {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Overflow toggle — hidden on desktop */
+.overflowToggle {
+  display: none;
+}
+
 /* Tablet responsive (iPad) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .logo {
@@ -272,35 +284,102 @@
     flex-shrink: 0;
   }
 
-  .galleryButton {
-    padding: 6px;
-    font-size: 0;
-    /* Hide text */
-    height: 32px;
-    width: 32px;
-    gap: 0;
-    min-width: 32px;
-    background: none;
-    border: none;
+  /* Overflow group — hidden by default on mobile, dropdown when open */
+  .overflowGroup {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+
+  .overflowOpen {
+    display: flex;
+    animation: overflowSlideDown 0.2s ease-out;
+  }
+
+  /* Gallery button inside dropdown — show icon + text */
+  .overflowGroup .galleryButton {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    height: 36px;
+    width: auto;
+    min-width: auto;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-radius: 8px;
     color: #1a1a2e;
   }
 
-  .galleryButton:hover {
-    background: rgba(0, 0, 0, 0.06);
+  .overflowGroup .galleryButton:hover {
+    background: rgba(0, 0, 0, 0.08);
     transform: none;
     box-shadow: none;
-    border-color: transparent;
   }
 
-  .galleryButton svg {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    opacity: 0.8;
+  .overflowGroup .galleryButton svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+  }
+
+  /* Overflow toggle — visible on mobile */
+  .overflowToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: rgba(26, 26, 46, 0.5);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .overflowToggle:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .overflowToggleActive {
+    color: #1a1a2e;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .overflowToggle svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@keyframes overflowSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -329,15 +408,21 @@
     height: 5px;
   }
 
-  .galleryButton {
-    padding: 5px;
-    height: 30px;
+  .overflowToggle {
     width: 30px;
+    height: 30px;
     min-width: 30px;
   }
 
-  .galleryButton svg {
-    width: 14px;
-    height: 14px;
+  .overflowToggle svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .overflowGroup {
+    left: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    gap: 8px;
   }
 }

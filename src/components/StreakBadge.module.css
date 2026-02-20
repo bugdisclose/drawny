@@ -1,0 +1,156 @@
+/* Streak Badge — frosted-glass pill matching InkBar / ShareButton */
+.streakBadge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  cursor: default;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.streakBadge:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Active state — drew today */
+.active {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.active:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* Inactive state — streak alive but not yet drawn today */
+.inactive {
+  opacity: 0.65;
+}
+
+/* Fire icon */
+.fireIcon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Streak number */
+.count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* "days" / "day" label */
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+}
+
+/* ── Celebration animations ── */
+
+.celebrating {
+  animation: streakPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Expanding ring on new streak day */
+.ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 16px;
+  border: 2px solid rgba(245, 158, 11, 0.5);
+  animation: ringExpand 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes streakPop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ringExpand {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+/* ── Mobile (≤768px) — strip glass, icon + number only ── */
+@media (max-width: 768px) {
+  .streakBadge {
+    padding: 0;
+    height: auto;
+    gap: 3px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 0;
+  }
+
+  .streakBadge:hover {
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  .active {
+    opacity: 1;
+    border-color: transparent;
+  }
+
+  .inactive {
+    opacity: 0.55;
+  }
+
+  .fireIcon {
+    font-size: 14px;
+  }
+
+  .count {
+    font-size: 12px;
+  }
+
+  .label {
+    display: none;
+  }
+
+  .ring {
+    display: none;
+  }
+}
+
+/* ── Extra-small mobile (≤480px) ── */
+@media (max-width: 480px) {
+  .fireIcon {
+    font-size: 12px;
+  }
+
+  .count {
+    font-size: 11px;
+  }
+}

@@ -86,12 +86,11 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
         socket.on('disconnect', () => {
             console.log('[SocketServer] Client disconnected:', socket.id);
 
-            // Find and remove user's cursor
+            // Remove all cursor entries belonging to this socket
             for (const [userId, data] of userCursors) {
                 if (data.socketId === socket.id) {
                     userCursors.delete(userId);
                     io?.emit('cursor:remove', userId);
-                    break;
                 }
             }
 

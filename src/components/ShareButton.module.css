@@ -257,14 +257,14 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10000;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.3s ease-out;
     padding: 20px;
 }
 
@@ -278,7 +278,30 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: slideUp 0.3s ease;
+    animation: modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, opacity;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes mobileSheetUp {
+    from {
+        transform: translate3d(0, 100%, 0);
+    }
+
+    to {
+        transform: translate3d(0, 0, 0);
+    }
 }
 
 .modalHeader {
@@ -287,6 +310,7 @@
     justify-content: space-between;
     padding: 24px 24px 16px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    animation: contentFadeUp 0.4s ease-out 0.1s both;
 }
 
 .modalHeader h3 {
@@ -322,6 +346,7 @@
     padding: 24px;
     overflow-y: auto;
     flex: 1;
+    animation: contentFadeUp 0.4s ease-out 0.2s both;
 }
 
 /* Snapshot preview card */
@@ -336,6 +361,32 @@
     border: 1px solid rgba(0, 0, 0, 0.06);
     margin-bottom: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+    transform-origin: center center;
+}
+
+@keyframes contentFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .snapshotImage {
@@ -609,6 +660,8 @@
     gap: 12px;
     padding: 16px 24px 24px;
     border-top: 1px solid rgba(0, 0, 0, 0.08);
+    align-items: center;
+    animation: contentFadeUp 0.4s ease-out 0.3s both;
 }
 
 .cancelButton {
@@ -664,6 +717,8 @@
         /* Use dvh for real mobile browsers where address bar affects vh */
         height: 100vh;
         height: 100dvh;
+        /* Simpler fade for mobile — no backdrop-filter during entry to reduce GPU load */
+        animation: fadeIn 0.2s ease-out;
     }
 
     .modal {
@@ -673,6 +728,20 @@
         max-height: 80dvh;
         margin-top: auto;
         padding-bottom: env(safe-area-inset-bottom);
+        /* Clean bottom-sheet slide — no bounce, no scale, GPU-composited */
+        animation: mobileSheetUp 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: transform;
+    }
+
+    /* Disable staggered child animations on mobile — the sheet slides in as one unit */
+    .modalHeader,
+    .modalBody,
+    .modalFooter {
+        animation: none;
+    }
+
+    .snapshotCard {
+        animation: none;
     }
 
     .modalHeader {
