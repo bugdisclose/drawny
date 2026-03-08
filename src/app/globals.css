@@ -34,6 +34,17 @@ canvas {
   -ms-user-select: none;
 }
 
+/* Ensure Excalidraw container and canvas receive all touch input on iPad */
+.excalidraw {
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.excalidraw canvas.interactive {
+  touch-action: none !important;
+  pointer-events: all !important;
+}
+
 /* Buttons reset */
 button {
   font-family: inherit;
@@ -72,10 +83,16 @@ button:focus-visible {
   color: #1a1a2e;
 }
 
-/* Improve touch experience — scoped to avoid affecting Excalidraw internals */
+/* Improve touch experience on our custom UI buttons */
 @media (hover: none) and (pointer: coarse) {
-  button:not(.excalidraw button):not(.excalidraw *) {
+  button {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* Reset for Excalidraw internal buttons — don't interfere with its layout */
+  .excalidraw button {
+    min-height: unset;
+    min-width: unset;
   }
 }

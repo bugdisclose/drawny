@@ -267,22 +267,34 @@ export default function ExcalidrawCanvas({
         }
     }, []);
 
-    // Prevent Safari/iPad default touch behaviors (rubber-band, pull-to-refresh) on the canvas
+    // Fix iPad/Safari: prevent browser from stealing touch events and ensure
+    // Excalidraw's interactive canvas receives all pointer input.
     useEffect(() => {
         const wrapper = document.querySelector(`.${styles.excalidrawWrapper}`);
         if (!wrapper) return;
 
-        const preventDefault = (e: Event) => {
-            // Allow Excalidraw to handle the touch — just prevent browser default
+        // Prevent Safari from intercepting multi-touch for page zoom
+        const preventMultiTouch = (e: Event) => {
             if ((e as TouchEvent).touches && (e as TouchEvent).touches.length > 1) {
-                // Multi-touch: prevent page zoom but Excalidraw handles pinch internally
                 e.preventDefault();
             }
         };
 
-        wrapper.addEventListener('touchmove', preventDefault, { passive: false });
+        // On touchstart, ensure the Excalidraw container has focus (needed for iPad)
+        // and that the interactive canvas is the event target
+        const ensureFocus = () => {
+            const container = wrapper.querySelector('.excalidraw') as HTMLElement;
+            if (container && document.activeElement !== container) {
+                container.focus({ preventScroll: true });
+            }
+        };
+
+        wrapper.addEventListener('touchmove', preventMultiTouch, { passive: false });
+        wrapper.addEventListener('touchstart', ensureFocus, { passive: true });
+
         return () => {
-            wrapper.removeEventListener('touchmove', preventDefault);
+            wrapper.removeEventListener('touchmove', preventMultiTouch);
+            wrapper.removeEventListener('touchstart', ensureFocus);
         };
     }, []);
 
@@ -641,6 +653,8 @@ export default function ExcalidrawCanvas({
                 gridModeEnabled={false}
                 theme="light"
                 name="Drawny Canvas"
+                autoFocus={true}
+                detectScroll={false}
                 UIOptions={{
                     canvasActions: {
                         changeViewBackgroundColor: false,
@@ -650,6 +664,9 @@ export default function ExcalidrawCanvas({
                         saveToActiveFile: false,
                         toggleTheme: false,
                         saveAsImage: false,
+                    },
+                    tools: {
+                        image: false,
                     },
                 }}
             />

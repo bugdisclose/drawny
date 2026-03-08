@@ -1,27 +1,43 @@
-/* Hide Excalidraw specific UI elements to use our custom toolbar */
-
+/*
+ * Hide Excalidraw's built-in UI — we use our own Toolbar.
+ *
+ * IMPORTANT: Do NOT hide .layer-ui__wrapper itself. Excalidraw uses it for
+ * layout calculations and pointer-event coordinate mapping. Hiding it with
+ * display:none breaks touch/pen input on iPad Safari.
+ * Instead, hide only the visible child UI elements.
+ */
 .excalidrawWrapper :global(.App-menu_top),
+.excalidrawWrapper :global(.App-menu_bottom),
 .excalidrawWrapper :global(.App-bottom-bar),
-.excalidrawWrapper :global(.layer-ui__wrapper),
 .excalidrawWrapper :global(.Stack),
-.excalidrawWrapper :global(.island) {
+.excalidrawWrapper :global(.island),
+.excalidrawWrapper :global(.FixedSideContainer),
+.excalidrawWrapper :global(.HintViewer),
+.excalidrawWrapper :global(.scroll-back-to-content),
+.excalidrawWrapper :global(.welcome-screen-center),
+.excalidrawWrapper :global(.welcome-screen-decor),
+.excalidrawWrapper :global(.help-icon),
+.excalidrawWrapper :global([class*="HintViewer"]),
+.excalidrawWrapper :global(.zen-mode-transition),
+.excalidrawWrapper :global(.shapes-section),
+.excalidrawWrapper :global(.layer-ui__wrapper__footer) {
     display: none !important;
 }
 
-/* Ensure Excalidraw canvas elements handle touch properly on iPad */
-.excalidrawWrapper :global(canvas) {
+/* Keep layer-ui__wrapper visible but ensure it doesn't block interaction */
+.excalidrawWrapper :global(.layer-ui__wrapper) {
+    pointer-events: none !important;
+}
+
+/* Ensure the interactive canvas ALWAYS receives pointer/touch events */
+.excalidrawWrapper :global(canvas.interactive) {
+    pointer-events: all !important;
     touch-action: none;
 }
 
-/* Hide help text on mobile/tablet */
-@media (max-width: 1024px) {
-    .excalidrawWrapper :global(.help-icon),
-    .excalidrawWrapper :global(.HintViewer),
-    .excalidrawWrapper :global(.zen-mode-transition),
-    .excalidrawWrapper :global([class*="HintViewer"]),
-    .excalidrawWrapper :global([class*="help"]) {
-        display: none !important;
-    }
+/* Static canvas should never capture events */
+.excalidrawWrapper :global(canvas.static) {
+    pointer-events: none !important;
 }
 
 /* Ensure canvas takes full height/width without scrollbars */
