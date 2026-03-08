@@ -267,6 +267,25 @@ export default function ExcalidrawCanvas({
         }
     }, []);
 
+    // Prevent Safari/iPad default touch behaviors (rubber-band, pull-to-refresh) on the canvas
+    useEffect(() => {
+        const wrapper = document.querySelector(`.${styles.excalidrawWrapper}`);
+        if (!wrapper) return;
+
+        const preventDefault = (e: Event) => {
+            // Allow Excalidraw to handle the touch — just prevent browser default
+            if ((e as TouchEvent).touches && (e as TouchEvent).touches.length > 1) {
+                // Multi-touch: prevent page zoom but Excalidraw handles pinch internally
+                e.preventDefault();
+            }
+        };
+
+        wrapper.addEventListener('touchmove', preventDefault, { passive: false });
+        return () => {
+            wrapper.removeEventListener('touchmove', preventDefault);
+        };
+    }, []);
+
     // Clear Excalidraw's localStorage on mount to prevent it from restoring the last tool
     useEffect(() => {
         try {

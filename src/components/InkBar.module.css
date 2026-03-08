@@ -138,6 +138,28 @@
   }
 }
 
+/* Tablet responsive */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .inkBarWrapper {
+    min-width: 180px;
+    padding: 0 14px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .labelText {
+    font-size: 12px;
+  }
+
+  .barContainer {
+    height: 5px;
+  }
+
+  .percentageDisplay {
+    font-size: 12px;
+  }
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .inkBarWrapper {

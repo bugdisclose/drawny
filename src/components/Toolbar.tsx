@@ -36,6 +36,7 @@ export default function Toolbar({
     const [isExpanded, setIsExpanded] = useState(true);
     const [isVisible, setIsVisible] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
 
     // Mobile expandable pickers
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -45,19 +46,22 @@ export default function Toolbar({
     const colorPickerRef = useRef<HTMLDivElement>(null);
     const sizePickerRef = useRef<HTMLDivElement>(null);
 
-    // Detect mobile device
+    // Detect mobile/tablet device — iPads (768-1024px) get the touch-friendly toolbar
     useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth <= 768);
+        const checkDevice = () => {
+            const w = window.innerWidth;
+            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            setIsMobile(w <= 768);
+            setIsTablet(w > 768 && w <= 1024 && isTouch);
         };
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        checkDevice();
+        window.addEventListener('resize', checkDevice);
+        return () => window.removeEventListener('resize', checkDevice);
     }, []);
 
     // Close popups when clicking outside
     useEffect(() => {
-        if (!isMobile) return;
+        if (!isMobile && !isTablet) return;
 
         const handleClickOutside = (e: MouseEvent | TouchEvent) => {
             const target = e.target as Node;
@@ -75,12 +79,13 @@ export default function Toolbar({
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('touchstart', handleClickOutside);
         };
-    }, [isMobile, showColorPicker, showSizePicker]);
+    }, [isMobile, isTablet, showColorPicker, showSizePicker]);
 
-    // Auto-hide on mobile after 4 seconds of inactivity
+    // Auto-hide on mobile/tablet after inactivity (longer timeout for tablet)
     useEffect(() => {
-        if (!isMobile || !isVisible) return;
+        if ((!isMobile && !isTablet) || !isVisible) return;
 
+        const hideDelay = isTablet ? 8000 : 4000;
         const resetTimer = () => {
             if (hideTimerRef.current) {
                 clearTimeout(hideTimerRef.current);
@@ -89,7 +94,7 @@ export default function Toolbar({
                 setIsVisible(false);
                 setShowColorPicker(false);
                 setShowSizePicker(false);
-            }, 4000);
+            }, hideDelay);
         };
 
         resetTimer();
@@ -99,20 +104,21 @@ export default function Toolbar({
                 clearTimeout(hideTimerRef.current);
             }
         };
-    }, [isMobile, isVisible]);
+    }, [isMobile, isTablet, isVisible]);
 
     // Reset auto-hide timer on interaction
     const handleInteraction = useCallback(() => {
-        if (!isMobile) return;
+        if (!isMobile && !isTablet) return;
         if (hideTimerRef.current) {
             clearTimeout(hideTimerRef.current);
         }
+        const hideDelay = isTablet ? 8000 : 4000;
         hideTimerRef.current = setTimeout(() => {
             setIsVisible(false);
             setShowColorPicker(false);
             setShowSizePicker(false);
-        }, 4000);
-    }, [isMobile]);
+        }, hideDelay);
+    }, [isMobile, isTablet]);
 
     const showToolbar = () => {
         setIsVisible(true);
@@ -174,14 +180,14 @@ export default function Toolbar({
         </svg>
     );
 
-    // ─── Mobile Horizontal Toolbar ──────────────────────────────────────
-    if (isMobile) {
+    // ─── Mobile / Tablet Horizontal Toolbar ─────────────────────────────
+    if (isMobile || isTablet) {
         return (
             <>
                 {/* FAB — shows when toolbar is hidden */}
                 {!isVisible && (
                     <button
-                        className={styles.fab}
+                        className={`${styles.fab} ${isTablet ? styles.fabTablet : ''}`}
                         onClick={showToolbar}
                         aria-label="Show toolbar"
                     >
@@ -189,9 +195,9 @@ export default function Toolbar({
                     </button>
                 )}
 
-                {/* Mobile horizontal toolbar */}
+                {/* Mobile/Tablet horizontal toolbar */}
                 <div
-                    className={`${styles.mobileToolbar} ${!isVisible ? styles.mobileHidden : ''}`}
+                    className={`${styles.mobileToolbar} ${isTablet ? styles.tabletToolbar : ''} ${!isVisible ? styles.mobileHidden : ''}`}
                     onTouchStart={handleInteraction}
                 >
                     {isExpanded ? (

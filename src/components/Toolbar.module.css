@@ -589,46 +589,85 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   TABLET — horizontal bottom bar (desktop-like but bottom-positioned)
+   TABLET — Touch-friendly bottom toolbar (used on iPad and similar)
+   Uses the mobile toolbar layout but with larger touch targets
    ═══════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 1024px) and (min-width: 769px) {
+/* Tablet variant of the mobile toolbar — larger, more spacious */
+.tabletToolbar {
+    bottom: 20px;
+    padding: 8px 14px;
+    border-radius: 22px;
+}
+
+.tabletToolbar .mobileRow {
+    gap: 6px;
+}
+
+.tabletToolbar .mBtn {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+}
+
+.tabletToolbar .mBtn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.tabletToolbar .mColorSwatch {
+    width: 26px;
+    height: 26px;
+}
+
+.tabletToolbar .mDivider {
+    height: 28px;
+    margin: 0 4px;
+}
+
+.tabletToolbar .mExpandBtn {
+    width: 56px;
+    height: 52px;
+    border-radius: 14px;
+}
+
+.tabletToolbar .mCollapse svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Larger FAB on tablet */
+.fabTablet {
+    width: 64px;
+    height: 64px;
+    bottom: 24px;
+}
+
+.fabTablet svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Tablet popup pickers — slightly larger */
+.tabletToolbar .mPopup {
+    padding: 14px;
+    border-radius: 18px;
+}
+
+.tabletToolbar .mColorDot {
+    width: 38px;
+    height: 38px;
+}
+
+.tabletToolbar .mSizeOption {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+}
+
+/* Hide desktop toolbar on touch tablets — the mobile toolbar takes over */
+@media (max-width: 1024px) and (min-width: 769px) and (pointer: coarse) {
     .toolbar {
-        top: auto;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        flex-direction: row;
-        flex-wrap: wrap;
-        max-width: 95vw;
-        justify-content: center;
-        padding: 20px;
-        gap: 16px;
-    }
-
-    .section {
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .sectionLabel {
-        font-size: 12px;
-        min-width: 60px;
-    }
-
-    .toolButton {
-        width: 52px;
-        height: 52px;
-    }
-
-    .sizeButton {
-        width: 52px;
-        height: 52px;
-    }
-
-    .colorButton {
-        width: 40px;
-        height: 40px;
+        display: none !important;
     }
 }

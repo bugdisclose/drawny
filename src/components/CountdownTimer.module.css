@@ -94,6 +94,27 @@
     background: linear-gradient(90deg, #e94560, #f38181);
 }
 
+/* Tablet responsive */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .container {
+        padding: 8px 14px;
+        height: 42px;
+        border-radius: 10px;
+    }
+
+    .timer {
+        font-size: 13px;
+    }
+
+    .timeUnit {
+        font-size: 13px;
+    }
+
+    .label {
+        font-size: 11px;
+    }
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
     .container {

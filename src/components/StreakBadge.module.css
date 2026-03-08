@@ -99,6 +99,27 @@
   }
 }
 
+/* ── Tablet (769-1024px) ── */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .streakBadge {
+    padding: 0 12px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .count {
+    font-size: 13px;
+  }
+
+  .label {
+    font-size: 11px;
+  }
+
+  .fireIcon {
+    font-size: 15px;
+  }
+}
+
 /* ── Mobile (≤768px) — strip glass, icon + number only ── */
 @media (max-width: 768px) {
   .streakBadge {

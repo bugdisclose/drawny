@@ -8,8 +8,13 @@
     display: none !important;
 }
 
-/* Hide help text on mobile */
-@media (max-width: 768px) {
+/* Ensure Excalidraw canvas elements handle touch properly on iPad */
+.excalidrawWrapper :global(canvas) {
+    touch-action: none;
+}
+
+/* Hide help text on mobile/tablet */
+@media (max-width: 1024px) {
     .excalidrawWrapper :global(.help-icon),
     .excalidrawWrapper :global(.HintViewer),
     .excalidrawWrapper :global(.zen-mode-transition),
@@ -22,6 +27,13 @@
 /* Ensure canvas takes full height/width without scrollbars */
 .excalidrawWrapper {
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     overflow: hidden;
+    /* Critical for iPad/touch: prevent browser from stealing touch events */
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    position: relative;
 }

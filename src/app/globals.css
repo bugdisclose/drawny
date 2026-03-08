@@ -11,6 +11,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 body {
@@ -20,6 +21,9 @@ body {
   background: #f5f7fa;
   color: #1a1a2e;
   overflow: hidden;
+  overscroll-behavior: none;
+  /* Prevent iOS Safari pull-to-refresh and rubber-band */
+  -webkit-overflow-scrolling: auto;
 }
 
 /* Prevent text selection during drawing */
@@ -68,9 +72,9 @@ button:focus-visible {
   color: #1a1a2e;
 }
 
-/* Improve touch experience */
+/* Improve touch experience — scoped to avoid affecting Excalidraw internals */
 @media (hover: none) and (pointer: coarse) {
-  button {
+  button:not(.excalidraw button):not(.excalidraw *) {
     min-height: 44px;
     min-width: 44px;
   }
