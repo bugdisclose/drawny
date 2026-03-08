@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, type MutableRefObject } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo, type MutableRefObject } from 'react';
 import dynamic from 'next/dynamic';
 import { Socket } from 'socket.io-client';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
@@ -627,24 +627,49 @@ export default function ExcalidrawCanvas({
         updateURLHash(scrollX, scrollY, zoom.value);
     }, [updateURLHash]);
 
+    // Stable callback ref — avoids creating a new function on every render
+    // which would cause Excalidraw to re-initialize and trigger infinite loops
+    const handleExcalidrawAPI = useCallback((api: any) => {
+        setExcalidrawAPI(api);
+    }, []);
+
+    // Memoize initialData so Excalidraw doesn't see a new object every render
+    const initialData = useMemo(() => ({
+        elements: initialElements || [],
+        appState: {
+            viewBackgroundColor: '#ffffff',
+            currentItemStrokeColor: activeColor,
+            currentItemStrokeWidth: getStrokeWidth(activeSize),
+            ...(initialViewport ? {
+                scrollX: initialViewport.scrollX,
+                scrollY: initialViewport.scrollY,
+                zoom: { value: initialViewport.zoom as any },
+            } : {}),
+        }
+    }), [initialElements, activeColor, activeSize, getStrokeWidth, initialViewport]);
+
+    // Memoize UIOptions — this never changes
+    const uiOptions = useMemo(() => ({
+        canvasActions: {
+            changeViewBackgroundColor: false,
+            clearCanvas: false,
+            export: false as const,
+            loadScene: false,
+            saveToActiveFile: false,
+            toggleTheme: false,
+            saveAsImage: false,
+        },
+        tools: {
+            image: false,
+        },
+    }), []);
+
     return (
         <div className={styles.excalidrawWrapper}>
             <Excalidraw
                 key={excalidrawKey} // Force remount when initial data changes
-                excalidrawAPI={(api) => setExcalidrawAPI(api)}
-                initialData={{
-                    elements: initialElements || [],
-                    appState: {
-                        viewBackgroundColor: '#ffffff',
-                        currentItemStrokeColor: activeColor,
-                        currentItemStrokeWidth: getStrokeWidth(activeSize),
-                        ...(initialViewport ? {
-                            scrollX: initialViewport.scrollX,
-                            scrollY: initialViewport.scrollY,
-                            zoom: { value: initialViewport.zoom as any },
-                        } : {}),
-                    }
-                }}
+                excalidrawAPI={handleExcalidrawAPI}
+                initialData={initialData}
                 onPointerUpdate={onPointerUpdate}
                 onChange={onChange}
                 onScrollChange={onScrollChange}
@@ -655,20 +680,7 @@ export default function ExcalidrawCanvas({
                 name="Drawny Canvas"
                 autoFocus={true}
                 detectScroll={false}
-                UIOptions={{
-                    canvasActions: {
-                        changeViewBackgroundColor: false,
-                        clearCanvas: false,
-                        export: false,
-                        loadScene: false,
-                        saveToActiveFile: false,
-                        toggleTheme: false,
-                        saveAsImage: false,
-                    },
-                    tools: {
-                        image: false,
-                    },
-                }}
+                UIOptions={uiOptions}
             />
         </div>
     );
