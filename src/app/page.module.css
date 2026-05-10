@@ -7,82 +7,208 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Logo */
-.logo {
+/* ═══════════════════════════════════════════════════════════════════════
+   HEADER BAR — compact unified frosted-glass panel.
+   Three zones: brand · status · actions.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.headerBar {
   position: fixed;
-  top: 20px;
-  left: 24px;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 1180px;
+  height: 48px;
+  z-index: 1000;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  z-index: 100;
-  pointer-events: none;
-  animation: slideDown 0.5s ease-out;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 6px 22px rgba(0, 0, 0, 0.05),
+    0 1px 4px rgba(0, 0, 0, 0.04);
+  animation: headerSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes slideDown {
+@keyframes headerSlideDown {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateX(-50%) translateY(-10px);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
-.logoText {
-  font-size: 28px;
+/* ─── Left zone — brand ───────────────────────────────────────────────── */
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.brandLogo {
+  font-size: 15px;
   font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1;
   background: linear-gradient(90deg, #6b3fe9 0%, #c92b7c 38%, #f35a2d 68%, #ffc847 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
-  letter-spacing: -1px;
   filter:
-    drop-shadow(0 0 8px rgba(201, 43, 124, 0.35))
-    drop-shadow(0 0 18px rgba(243, 90, 45, 0.22));
+    drop-shadow(0 0 4px rgba(201, 43, 124, 0.3))
+    drop-shadow(0 0 12px rgba(243, 90, 45, 0.18));
 }
 
-.logoTag {
-  font-size: 11px;
-  color: rgba(26, 26, 46, 0.5);
+.brandTag {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(26, 26, 46, 0.42);
   text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-top: -4px;
+  letter-spacing: 1.4px;
+  white-space: nowrap;
+  transform: translateY(1px); /* optical align with logo cap-height */
 }
 
-.artistBadge {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(26, 26, 46, 0.65);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  padding: 3px 10px;
-  border-radius: 99px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  letter-spacing: 0.3px;
-  animation: fadeIn 0.6s ease-out;
-  pointer-events: auto;
+/* ─── Zone divider ────────────────────────────────────────────────────── */
+
+.headerDivider {
+  width: 1px;
+  height: 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  margin: 0 10px;
+  flex-shrink: 0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
+/* ─── Center zone — passive status ────────────────────────────────────── */
 
-  to {
+.headerCenter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.liveStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(26, 26, 46, 0.7);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.liveStat strong {
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #b0b0b8;
+  flex-shrink: 0;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.liveDotConnected {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.55);
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 
-/* Loading state */
+.liveText {
+  white-space: nowrap;
+}
+
+.softSep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(26, 26, 46, 0.2);
+  flex-shrink: 0;
+}
+
+.artistsToday {
+  font-size: 12px;
+  color: rgba(26, 26, 46, 0.62);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ─── Right zone — actions ────────────────────────────────────────────── */
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.galleryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(26, 26, 46, 0.6);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.galleryButton:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1a1a2e;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.galleryButton:focus-visible {
+  outline: 2px solid rgba(233, 69, 96, 0.45);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Loading state
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .loading {
   width: 100vw;
   height: 100vh;
@@ -111,344 +237,129 @@
   }
 }
 
-/* Sleek Top Bar */
-.topBar {
-  position: fixed;
-  top: 20px;
-  right: 24px;
-  z-index: 1000;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  animation: slideDown 0.5s ease-out;
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════════════ */
 
-/* Top bar left group — hidden on desktop, shown on mobile */
-.topBarLeft {
-  display: none;
-}
-
-.inlineLogo {
-  font-size: 16px;
-  font-weight: 800;
-  background: linear-gradient(90deg, #6b3fe9 0%, #c92b7c 38%, #f35a2d 68%, #ffc847 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  letter-spacing: -0.5px;
-  line-height: 1;
-  filter:
-    drop-shadow(0 0 4px rgba(201, 43, 124, 0.3))
-    drop-shadow(0 0 10px rgba(243, 90, 45, 0.18));
-}
-
-.topBarDivider {
-  width: 1px;
-  height: 14px;
-  background: rgba(0, 0, 0, 0.12);
-  flex-shrink: 0;
-}
-
-.liveDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #888;
-  flex-shrink: 0;
-}
-
-.liveDotConnected {
-  background: #10b981;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-  animation: livePulse 2s infinite;
-}
-
-@keyframes livePulse {
-
-  0%,
-  100% {
-    opacity: 1;
+/* Tablet — drop tagline, tighten dividers */
+@media (max-width: 1024px) {
+  .headerBar {
+    height: 46px;
+    padding: 0 10px;
   }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.liveCount {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(26, 26, 46, 0.6);
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-}
-
-.galleryButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  padding: 10px 16px;
-  backdrop-filter: blur(12px);
-  color: #1a1a2e;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  height: 44px;
-}
-
-.galleryButton:hover {
-  background: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-
-.galleryButton svg {
-  opacity: 0.7;
-}
-
-/* Overflow group — wraps gallery + timer (inline on desktop, dropdown on mobile) */
-.overflowGroup {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-/* Overflow toggle — hidden on desktop */
-.overflowToggle {
-  display: none;
-}
-
-/* Tablet responsive (iPad) */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .logo {
-    top: 16px;
-    left: 16px;
-  }
-
-  .logoText {
-    font-size: 24px;
-  }
-
-  .logoTag {
-    font-size: 10px;
-    letter-spacing: 1.5px;
-  }
-
-  .artistBadge {
-    font-size: 10px;
-    padding: 2px 8px;
-    margin-top: 4px;
-  }
-
-  .topBar {
-    top: 16px;
-    right: 16px;
-    gap: 10px;
-  }
-
-  .galleryButton {
-    padding: 10px 16px;
-    font-size: 13px;
-    height: 42px;
-    border-radius: 10px;
-  }
-
-  .galleryButton svg {
-    width: 15px;
-    height: 15px;
-  }
-}
-
-/* iPad-specific: prevent rubber-band scrolling from interfering with canvas */
-@media (pointer: coarse) and (min-width: 769px) and (max-width: 1366px) {
-  .main {
-    overflow: hidden;
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: auto;
-  }
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-
-  /* Hide separate logo on mobile — it's now in the top bar */
-  .logo {
+  .brandTag {
     display: none;
   }
+  .headerDivider {
+    margin: 0 8px;
+    height: 20px;
+  }
+}
 
-  /* Unified frosted glass top bar */
-  .topBar {
+/* Small tablet — tighten center gap, "drew today" stays visible */
+@media (max-width: 820px) {
+  .headerCenter {
+    gap: 6px;
+  }
+}
+
+/* Mobile — full-edge bar, dividers kept for structure, "drew today" → "12" */
+@media (max-width: 640px) {
+  .headerBar {
     top: 0;
     left: 0;
     right: 0;
-    padding: 8px 12px;
-    padding-top: max(8px, env(safe-area-inset-top));
-    gap: 8px;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
-    border-radius: 0 0 16px 16px;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    height: calc(48px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: 10px;
+    padding-right: 8px;
+    padding-bottom: 0;
+    border-radius: 0 0 14px 14px;
+    border-top: none;
+    box-shadow:
+      0 1px 8px rgba(0, 0, 0, 0.05),
+      0 4px 20px rgba(0, 0, 0, 0.04);
     animation: none;
   }
 
-  /* Show logo + live indicator group on mobile */
-  .topBarLeft {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
+  /* Dividers stay — give brand and actions clear separation from status */
+  .headerDivider {
+    height: 16px;
+    margin: 0 8px;
   }
 
-  /* Overflow group — hidden by default on mobile, dropdown when open */
-  .overflowGroup {
+  /* Center zone — let limited content sit balanced */
+  .headerCenter {
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .liveStat {
+    gap: 0; /* liveText hidden; only the dot shows */
+  }
+
+  .liveText {
     display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 12px;
-    right: 12px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
-    padding: 8px 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
   }
 
-  .overflowOpen {
-    display: flex;
-    animation: overflowSlideDown 0.2s ease-out;
+  /* Restore "active today" on mobile as a count chip — hide the trailing word */
+  .artistsToday {
+    font-size: 11px;
+    color: rgba(26, 26, 46, 0.62);
+    line-height: 1;
+    white-space: nowrap;
   }
 
-  /* Gallery button inside dropdown — show icon + text */
-  .overflowGroup .galleryButton {
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    height: 36px;
-    width: auto;
-    min-width: auto;
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.04);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    color: #1a1a2e;
+  .artistsTodayWord {
+    display: none; /* desktop renders "🎨 12 drew today" → mobile shows "🎨 12" */
   }
 
-  .overflowGroup .galleryButton:hover {
-    background: rgba(0, 0, 0, 0.08);
-    transform: none;
-    box-shadow: none;
+  .softSep {
+    width: 2.5px;
+    height: 2.5px;
   }
 
-  .overflowGroup .galleryButton svg {
-    width: 14px;
-    height: 14px;
-    opacity: 0.7;
-  }
-
-  /* Overflow toggle — visible on mobile */
-  .overflowToggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .galleryButton {
     width: 32px;
     height: 32px;
-    min-width: 32px;
-    padding: 0;
-    background: none;
-    border: none;
     border-radius: 8px;
-    color: rgba(26, 26, 46, 0.5);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
   }
 
-  .overflowToggle:hover {
-    background: rgba(0, 0, 0, 0.06);
-  }
-
-  .overflowToggleActive {
-    color: #1a1a2e;
-    background: rgba(0, 0, 0, 0.06);
-  }
-
-  .overflowToggle svg {
+  .galleryButton svg {
     width: 14px;
     height: 14px;
   }
-}
 
-@keyframes overflowSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .headerRight {
+    gap: 3px;
   }
 }
 
-/* Extra small mobile */
-@media (max-width: 480px) {
-  .topBar {
-    padding: 6px 10px;
-    padding-top: max(6px, env(safe-area-inset-top));
-    gap: 5px;
+/* Pocket phone — drop bullet seps and slightly shrink brand. Dividers stay. */
+@media (max-width: 420px) {
+  .headerBar {
+    padding-left: 8px;
+    padding-right: 6px;
   }
-
-  .inlineLogo {
+  .brandLogo {
     font-size: 14px;
   }
-
-  .topBarDivider {
-    height: 12px;
+  .headerDivider {
+    margin: 0 6px;
+    height: 14px;
   }
-
-  .liveCount {
-    font-size: 9px;
+  .headerCenter {
+    gap: 4px;
   }
-
-  .liveDot {
-    width: 5px;
-    height: 5px;
+  .softSep {
+    display: none;
   }
-
-  .overflowToggle {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-  }
-
-  .overflowToggle svg {
-    width: 12px;
-    height: 12px;
-  }
-
-  .overflowGroup {
-    left: 10px;
-    right: 10px;
-    padding: 6px 10px;
-    gap: 8px;
+  .artistsToday {
+    font-size: 10.5px;
   }
 }

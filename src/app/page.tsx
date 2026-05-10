@@ -42,8 +42,6 @@ export default function Home() {
   const [startTime, setStartTime] = useState<number | null>(null);
   // Track current viewport for share feature
   const [viewport, setViewport] = useState<ViewportCoordinates | null>(null);
-  // Overflow menu for mobile (gallery + timer)
-  const [overflowOpen, setOverflowOpen] = useState(false);
 
   // Snapshot ref — ExcalidrawCanvas populates this with a capture function
   const snapshotRef = useRef<CaptureSnapshotFn | null>(null);
@@ -172,71 +170,64 @@ export default function Home() {
         />
       )}
 
-      {/* Logo */}
-      <div className={styles.logo}>
-        <span className={styles.logoText}>drawny</span>
-        <span className={styles.logoTag}>Draw with strangers.</span>
-        {artistCount > 0 && (
-          <span className={styles.artistBadge}>
-            {artistCount < 10
-              ? '✨ Many people are drawing today'
-              : `🎨 ${artistCount} artists drew today`}
-          </span>
-        )}
-      </div>
-
-      {/* Sleek Top Bar - Live Artists, Gallery, Timer, Ink, and Share */}
-      <div className={styles.topBar}>
-        {/* Inline branding + live artists — visible on mobile only */}
-        <div className={styles.topBarLeft}>
-          <span className={styles.inlineLogo}>drawny</span>
-          <span className={styles.topBarDivider} />
-          <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
-          <span className={styles.liveCount}>{usersCount} Artists Live</span>
+      {/* Unified header — single frosted-glass panel, three zones */}
+      <header className={styles.headerBar}>
+        {/* LEFT — brand */}
+        <div className={styles.headerLeft}>
+          <span className={styles.brandLogo}>drawny</span>
+          <span className={styles.brandTag}>Draw with strangers</span>
         </div>
 
-        {/* Gallery + Timer: inline on desktop, overflow dropdown on mobile */}
-        <div className={`${styles.overflowGroup} ${overflowOpen ? styles.overflowOpen : ''}`}>
+        <span className={styles.headerDivider} aria-hidden="true" />
+
+        {/* CENTER — live status + countdown */}
+        <div className={styles.headerCenter}>
+          <span className={styles.liveStat} aria-live="polite">
+            <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
+            <span className={styles.liveText}>
+              <strong>{usersCount}</strong> live
+            </span>
+          </span>
+
+          {artistCount > 0 && (
+            <>
+              <span className={styles.softSep} aria-hidden="true" />
+              <span className={styles.artistsToday}>
+                🎨 {artistCount}
+                <span className={styles.artistsTodayWord}>
+                  {' '}drew today
+                </span>
+              </span>
+            </>
+          )}
+
+          <span className={styles.softSep} aria-hidden="true" />
+          <CountdownTimer serverStartTime={startTime} />
+        </div>
+
+        <span className={styles.headerDivider} aria-hidden="true" />
+
+        {/* RIGHT — gamification + actions */}
+        <div className={styles.headerRight}>
+          <InkBar inkState={inkState} />
+          <StreakBadge streakState={streakState} />
           <Link
             href="/gallery"
             className={styles.galleryButton}
             onClick={() => trackEvent('gallery_button_click', { location: 'top_bar' })}
+            aria-label="Gallery"
+            title="Gallery"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <polyline points="21 15 16 10 5 21" />
             </svg>
-            Gallery
           </Link>
-          <CountdownTimer serverStartTime={startTime} />
+          <FeedbackButton />
+          <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />
         </div>
-
-        {/* Overflow toggle — mobile only */}
-        <button
-          className={`${styles.overflowToggle} ${overflowOpen ? styles.overflowToggleActive : ''}`}
-          onClick={() => setOverflowOpen(v => !v)}
-          aria-label="More options"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="5" r="1.5" />
-            <circle cx="12" cy="12" r="1.5" />
-            <circle cx="12" cy="19" r="1.5" />
-          </svg>
-        </button>
-
-        {/* Ink Bar - Shows ink stamina */}
-        <InkBar inkState={inkState} />
-
-        {/* Streak Badge - Daily drawing streak */}
-        <StreakBadge streakState={streakState} />
-
-        {/* Feedback - icon-only, slots in alongside the other header buttons */}
-        <FeedbackButton />
-
-        {/* Share Button - Mobile-friendly sharing with snapshot */}
-        <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />
-      </div>
+      </header>
 
       <ExcalidrawCanvas
         activeTool={selectedTool}

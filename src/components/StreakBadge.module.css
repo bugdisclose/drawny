@@ -1,35 +1,32 @@
-/* Streak Badge — frosted-glass pill matching InkBar / ShareButton */
+/* Streak Badge — inline within the header glass bar (no card chrome). */
 .streakBadge {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.2s ease;
+  gap: 5px;
+  padding: 0 9px;
+  height: 32px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
   cursor: default;
   white-space: nowrap;
   box-sizing: border-box;
 }
 
 .streakBadge:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
-/* Active state — drew today */
-.active {
-  border-color: rgba(245, 158, 11, 0.35);
-}
-
+/* Active state — drew today (warm tint when hovered) */
 .active:hover {
-  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 /* Inactive state — streak alive but not yet drawn today */
@@ -102,9 +99,10 @@
 /* ── Tablet (769-1024px) ── */
 @media (max-width: 1024px) and (min-width: 769px) {
   .streakBadge {
-    padding: 0 12px;
-    height: 42px;
-    border-radius: 10px;
+    padding: 0 8px;
+    height: 30px;
+    border-radius: 8px;
+    gap: 4px;
   }
 
   .count {

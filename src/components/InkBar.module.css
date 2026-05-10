@@ -1,23 +1,24 @@
-/* Ink Bar - Horizontal Layout */
+/* Ink Bar — inline within the header glass bar (no card chrome). */
 .inkBarWrapper {
   position: relative;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 0 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 44px;
-  transition: all 0.2s ease;
-  min-width: 220px;
+  gap: 8px;
+  padding: 0 10px;
+  height: 32px;
+  min-width: 150px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .inkBarWrapper:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
 }
 
 /* Icon and Label */
@@ -141,10 +142,11 @@
 /* Tablet responsive */
 @media (max-width: 1024px) and (min-width: 769px) {
   .inkBarWrapper {
-    min-width: 180px;
-    padding: 0 14px;
-    height: 42px;
-    border-radius: 10px;
+    min-width: 130px;
+    padding: 0 8px;
+    height: 30px;
+    border-radius: 8px;
+    gap: 7px;
   }
 
   .labelText {
