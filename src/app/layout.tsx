@@ -1,5 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
+import { Suspense } from 'react';
+import AnalyticsPageview from '@/components/AnalyticsPageview';
 import './globals.css';
+
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-7C3HNJ7QPL';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://drawny.com'),
@@ -7,12 +12,6 @@ export const metadata: Metadata = {
   description: 'Draw together on a shared canvas. No login, no setup — just draw.',
   keywords: ['drawing', 'collaborative', 'canvas', 'art', 'anonymous', 'real-time'],
   authors: [{ name: 'Drawny' }],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   openGraph: {
     title: 'Drawny - Draw with strangers.',
     description: 'Draw together on a shared canvas. No login, no setup — just draw.',
@@ -36,6 +35,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -51,7 +57,29 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+              `}
+            </Script>
+            <Suspense fallback={null}>
+              <AnalyticsPageview gaId={GA_MEASUREMENT_ID} />
+            </Suspense>
+          </>
+        )}
+        {children}
+      </body>
     </html>
   );
 }

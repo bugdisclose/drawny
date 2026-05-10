@@ -16,6 +16,8 @@ import InkBar from '@/components/InkBar';
 import StreakBadge from '@/components/StreakBadge';
 import ShareButton from '@/components/ShareButton';
 import ShareNudge from '@/components/ShareNudge';
+import FeedbackButton from '@/components/FeedbackButton';
+import { trackEvent } from '@/lib/analytics';
 import styles from './page.module.css';
 
 // Dynamic import for ExcalidrawCanvas
@@ -195,7 +197,11 @@ export default function Home() {
 
         {/* Gallery + Timer: inline on desktop, overflow dropdown on mobile */}
         <div className={`${styles.overflowGroup} ${overflowOpen ? styles.overflowOpen : ''}`}>
-          <Link href="/gallery" className={styles.galleryButton}>
+          <Link
+            href="/gallery"
+            className={styles.galleryButton}
+            onClick={() => trackEvent('gallery_button_click', { location: 'top_bar' })}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
@@ -224,6 +230,9 @@ export default function Home() {
 
         {/* Streak Badge - Daily drawing streak */}
         <StreakBadge streakState={streakState} />
+
+        {/* Feedback - icon-only, slots in alongside the other header buttons */}
+        <FeedbackButton />
 
         {/* Share Button - Mobile-friendly sharing with snapshot */}
         <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />

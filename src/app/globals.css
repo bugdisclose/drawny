@@ -20,9 +20,13 @@ body {
   line-height: 1.5;
   background: #f5f7fa;
   color: #1a1a2e;
-  overflow: hidden;
+  /* NOTE: do NOT set `overflow: hidden` here. The canvas page already locks
+     itself to the viewport via `.main { height: 100vh; overflow: hidden }`,
+     so body-level scroll is never triggered there. Locking it globally would
+     break scrolling on the gallery and any other long-content route.
+     `overscroll-behavior: none` is enough to suppress iOS Safari rubber-band
+     on the canvas page. */
   overscroll-behavior: none;
-  /* Prevent iOS Safari pull-to-refresh and rubber-band */
   -webkit-overflow-scrolling: auto;
 }
 

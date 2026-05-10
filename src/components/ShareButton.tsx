@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { buildShareUrl, buildDynamicShareUrl, formatCoordinates, type ViewportCoordinates } from '@/lib/deepLinkUtils';
+import { trackEvent } from '@/lib/analytics';
 import styles from './ShareButton.module.css';
 
 const SHARE_TEMPLATES = [
@@ -64,6 +65,7 @@ export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: Sh
         setShowModal(true);
         setSnapshotId(null);
         console.log('[Share] Modal opened');
+        trackEvent('share_button_click', { location: 'top_bar' });
 
         // Capture snapshot
         if (onCaptureSnapshot) {
@@ -180,6 +182,7 @@ export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: Sh
             setShowUrlCopied(true);
             setTimeout(() => setShowUrlCopied(false), 2000);
             console.log('[Share] URL copied to clipboard');
+            trackEvent('share_action', { method: 'copy_url' });
         } catch (error) {
             console.error('[Share] Failed to copy URL:', error);
             const textArea = document.createElement('textarea');
@@ -237,15 +240,18 @@ export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: Sh
 
                 await navigator.share(shareData);
                 console.log('[Share] Successfully shared via Web Share API');
+                trackEvent('share_action', { method: 'native_share' });
                 handleCloseModal();
             } catch (error) {
                 if ((error as Error).name !== 'AbortError') {
                     console.error('[Share] Error sharing:', error);
                     copyToClipboard(text);
+                    trackEvent('share_action', { method: 'copy_text_fallback' });
                 }
             }
         } else {
             copyToClipboard(text);
+            trackEvent('share_action', { method: 'copy_text' });
         }
     }, [getShareMessage, getShareHashtag, shareUrl, snapshotUrl, copyToClipboard, handleCloseModal]);
 

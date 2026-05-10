@@ -35,11 +35,15 @@
 .logoText {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+  background: linear-gradient(90deg, #6b3fe9 0%, #c92b7c 38%, #f35a2d 68%, #ffc847 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
   letter-spacing: -1px;
+  filter:
+    drop-shadow(0 0 8px rgba(201, 43, 124, 0.35))
+    drop-shadow(0 0 18px rgba(243, 90, 45, 0.22));
 }
 
 .logoTag {
@@ -127,12 +131,16 @@
 .inlineLogo {
   font-size: 16px;
   font-weight: 800;
-  background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+  background: linear-gradient(90deg, #6b3fe9 0%, #c92b7c 38%, #f35a2d 68%, #ffc847 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
   letter-spacing: -0.5px;
   line-height: 1;
+  filter:
+    drop-shadow(0 0 4px rgba(201, 43, 124, 0.3))
+    drop-shadow(0 0 10px rgba(243, 90, 45, 0.18));
 }
 
 .topBarDivider {

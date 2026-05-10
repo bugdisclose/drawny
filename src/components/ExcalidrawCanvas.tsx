@@ -267,36 +267,13 @@ export default function ExcalidrawCanvas({
         }
     }, []);
 
-    // Fix iPad/Safari: prevent browser from stealing touch events and ensure
-    // Excalidraw's interactive canvas receives all pointer input.
-    useEffect(() => {
-        const wrapper = document.querySelector(`.${styles.excalidrawWrapper}`);
-        if (!wrapper) return;
-
-        // Prevent Safari from intercepting multi-touch for page zoom
-        const preventMultiTouch = (e: Event) => {
-            if ((e as TouchEvent).touches && (e as TouchEvent).touches.length > 1) {
-                e.preventDefault();
-            }
-        };
-
-        // On touchstart, ensure the Excalidraw container has focus (needed for iPad)
-        // and that the interactive canvas is the event target
-        const ensureFocus = () => {
-            const container = wrapper.querySelector('.excalidraw') as HTMLElement;
-            if (container && document.activeElement !== container) {
-                container.focus({ preventScroll: true });
-            }
-        };
-
-        wrapper.addEventListener('touchmove', preventMultiTouch, { passive: false });
-        wrapper.addEventListener('touchstart', ensureFocus, { passive: true });
-
-        return () => {
-            wrapper.removeEventListener('touchmove', preventMultiTouch);
-            wrapper.removeEventListener('touchstart', ensureFocus);
-        };
-    }, []);
+    // iPad/Safari: rely on CSS `touch-action: none` (set on `.excalidrawWrapper`
+    // and `canvas.interactive`) to suppress browser page zoom/scroll. Do NOT
+    // attach a custom touchmove preventDefault — Excalidraw needs to receive
+    // multi-touch events to drive its own pinch/zoom and pan gestures. Do NOT
+    // call `.focus()` on the container during touchstart either: Excalidraw
+    // already focuses itself via `autoFocus`, and re-focusing mid-gesture can
+    // interrupt the pointer-event chain on iOS Safari.
 
     // Clear Excalidraw's localStorage on mount to prevent it from restoring the last tool
     useEffect(() => {
