@@ -42,6 +42,30 @@ export default function Home() {
   const [startTime, setStartTime] = useState<number | null>(null);
   // Track current viewport for share feature
   const [viewport, setViewport] = useState<ViewportCoordinates | null>(null);
+  // Mobile overflow dropdown (Gallery + Timer + artists-today)
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const overflowRef = useRef<HTMLDivElement | null>(null);
+
+  // Close overflow on outside click / Escape
+  useEffect(() => {
+    if (!overflowOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOverflowOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [overflowOpen]);
 
   // Snapshot ref — ExcalidrawCanvas populates this with a capture function
   const snapshotRef = useRef<CaptureSnapshotFn | null>(null);
@@ -180,17 +204,18 @@ export default function Home() {
 
         <span className={styles.headerDivider} aria-hidden="true" />
 
-        {/* CENTER — live status + countdown */}
+        {/* CENTER — live status (mobile) + artists-today + countdown (desktop) */}
         <div className={styles.headerCenter}>
           <span className={styles.liveStat} aria-live="polite">
             <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
             <span className={styles.liveText}>
-              <strong>{usersCount}</strong> live
+              <strong>{usersCount}</strong> {usersCount === 1 ? 'artist' : 'artists'} live
             </span>
           </span>
 
+          {/* Inline on desktop, moved to 3-dot dropdown on mobile */}
           {artistCount > 0 && (
-            <>
+            <span className={styles.inlineOnly}>
               <span className={styles.softSep} aria-hidden="true" />
               <span className={styles.artistsToday}>
                 🎨 {artistCount}
@@ -198,22 +223,26 @@ export default function Home() {
                   {' '}drew today
                 </span>
               </span>
-            </>
+            </span>
           )}
 
-          <span className={styles.softSep} aria-hidden="true" />
-          <CountdownTimer serverStartTime={startTime} />
+          <span className={styles.inlineOnly}>
+            <span className={styles.softSep} aria-hidden="true" />
+            <CountdownTimer serverStartTime={startTime} />
+          </span>
         </div>
 
         <span className={styles.headerDivider} aria-hidden="true" />
 
-        {/* RIGHT — gamification + actions */}
+        {/* RIGHT — gamification + actions (+ mobile overflow toggle) */}
         <div className={styles.headerRight}>
           <InkBar inkState={inkState} />
           <StreakBadge streakState={streakState} />
+
+          {/* Gallery — inline on desktop only */}
           <Link
             href="/gallery"
-            className={styles.galleryButton}
+            className={`${styles.galleryButton} ${styles.inlineOnly}`}
             onClick={() => trackEvent('gallery_button_click', { location: 'top_bar' })}
             aria-label="Gallery"
             title="Gallery"
@@ -224,8 +253,59 @@ export default function Home() {
               <polyline points="21 15 16 10 5 21" />
             </svg>
           </Link>
+
           <FeedbackButton />
           <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />
+
+          {/* 3-dot overflow — mobile only */}
+          <div ref={overflowRef} className={styles.overflowWrap}>
+            <button
+              className={`${styles.overflowToggle} ${overflowOpen ? styles.overflowToggleActive : ''}`}
+              onClick={() => setOverflowOpen(v => !v)}
+              aria-label="More"
+              aria-expanded={overflowOpen}
+              aria-haspopup="true"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="5" cy="12" r="1.6" />
+                <circle cx="12" cy="12" r="1.6" />
+                <circle cx="19" cy="12" r="1.6" />
+              </svg>
+            </button>
+
+            <div
+              className={`${styles.overflowPanel} ${overflowOpen ? styles.overflowPanelOpen : ''}`}
+              role="menu"
+            >
+              <Link
+                href="/gallery"
+                className={styles.overflowItem}
+                role="menuitem"
+                onClick={() => {
+                  setOverflowOpen(false);
+                  trackEvent('gallery_button_click', { location: 'overflow' });
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                <span>Gallery</span>
+              </Link>
+
+              <div className={styles.overflowItem} role="menuitem">
+                <CountdownTimer serverStartTime={startTime} />
+              </div>
+
+              {artistCount > 0 && (
+                <div className={styles.overflowItem} role="menuitem">
+                  <span aria-hidden="true">🎨</span>
+                  <span>{artistCount} drew today</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 

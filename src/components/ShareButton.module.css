@@ -143,13 +143,9 @@
 
 /* Tablet */
 @media (max-width: 1024px) and (min-width: 769px) {
-    .shareButton {
-        padding: 10px 14px;
-        height: 42px;
-        font-size: 13px;
-        border-radius: 10px;
-    }
-
+    /* .shareButton inherits the flat dark-pill base style — no chrome override.
+       (Previously this block overrode padding/height for the old 44px chip
+       layout, which broke the new 34px inline pill.) */
     .modal {
         max-height: 85vh;
         max-height: 85dvh;
@@ -242,13 +238,6 @@
         font-size: 11px;
         padding: 8px 16px;
         top: 60px;
-    }
-}
-
-/* Tablet landscape and desktop - can show icon only if needed */
-@media (min-width: 1024px) {
-    .shareButton {
-        padding: 10px 16px;
     }
 }
 

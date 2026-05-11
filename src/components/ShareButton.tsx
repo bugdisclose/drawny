@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef, type MutableRefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { buildShareUrl, buildDynamicShareUrl, formatCoordinates, type ViewportCoordinates } from '@/lib/deepLinkUtils';
 import { trackEvent } from '@/lib/analytics';
 import styles from './ShareButton.module.css';
@@ -299,8 +300,11 @@ export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: Sh
                 )}
             </div>
 
-            {/* Share Modal */}
-            {showModal && (
+            {/* Share Modal — portaled to document.body so it escapes the
+                header's containing block (created by its backdrop-filter +
+                transform). Without this, the fixed-positioned overlay would
+                be trapped inside the 48px header bar on desktop. */}
+            {showModal && createPortal(
                 <div className={styles.modalOverlay} onClick={handleCloseModal}>
                     <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
@@ -428,7 +432,8 @@ export default function ShareButton({ viewport, onCaptureSnapshot, openRef }: Sh
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body,
             )}
         </>
     );

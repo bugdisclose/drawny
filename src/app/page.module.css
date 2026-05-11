@@ -15,8 +15,14 @@
 .headerBar {
   position: fixed;
   top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centered via auto margins instead of transform: translateX(-50%).
+     A non-`none` transform on this element would make it the containing block
+     for any `position: fixed` descendant (e.g. the ShareButton modal), trapping
+     them inside the header's 48px-tall box. Margin-auto centering avoids that. */
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
   width: calc(100% - 24px);
   max-width: 1180px;
   height: 48px;
@@ -39,11 +45,12 @@
 @keyframes headerSlideDown {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    /* `none` so the bar stops being a containing block once the slide ends. */
+    transform: none;
   }
 }
 
@@ -200,6 +207,135 @@
   border-color: rgba(0, 0, 0, 0.06);
 }
 
+/* ─── inlineOnly: shows on desktop, hidden on mobile (≤640px) ─────────── */
+.inlineOnly {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+
+/* ─── overflow toggle + dropdown — mobile only ────────────────────────── */
+.overflowWrap {
+  position: relative;
+  display: none; /* hidden on desktop; shown in mobile media query */
+}
+
+.overflowToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(26, 26, 46, 0.55);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    background 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.overflowToggle svg {
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: block;
+}
+
+.overflowToggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a1a2e;
+}
+
+.overflowToggle:active {
+  transform: scale(0.94);
+}
+
+.overflowToggleActive {
+  background: rgba(26, 26, 46, 0.08);
+  border-color: rgba(26, 26, 46, 0.1);
+  color: #1a1a2e;
+}
+
+.overflowToggleActive svg {
+  transform: rotate(90deg);
+}
+
+.overflowPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 12px 30px rgba(0, 0, 0, 0.12),
+    0 4px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1100;
+}
+
+.overflowPanelOpen {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.overflowItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: #1a1a2e;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.overflowItem:hover {
+  background: rgba(0, 0, 0, 0.045);
+}
+
+.overflowItem:active {
+  transform: scale(0.98);
+}
+
+.overflowItem svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition:
+    opacity 0.18s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.overflowItem:hover svg {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
 .galleryButton:focus-visible {
   outline: 2px solid rgba(233, 69, 96, 0.45);
   outline-offset: 2px;
@@ -291,48 +427,39 @@
     margin: 0 8px;
   }
 
-  /* Center zone — let limited content sit balanced */
+  /* Center zone — live indicator only on mobile */
   .headerCenter {
     gap: 6px;
     flex: 1;
     min-width: 0;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .liveStat {
-    gap: 0; /* liveText hidden; only the dot shows */
+    gap: 6px;
+    font-size: 12px;
   }
 
   .liveText {
+    display: inline; /* show "N artists live" on mobile */
+  }
+
+  .liveText strong {
+    margin-right: 1px;
+  }
+
+  /* Hide inline gallery / timer / artists-today — they live in 3-dot overflow */
+  .inlineOnly {
     display: none;
   }
 
-  /* Restore "active today" on mobile as a count chip — hide the trailing word */
-  .artistsToday {
-    font-size: 11px;
-    color: rgba(26, 26, 46, 0.62);
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .artistsTodayWord {
-    display: none; /* desktop renders "🎨 12 drew today" → mobile shows "🎨 12" */
+  /* Show the 3-dot overflow toggle */
+  .overflowWrap {
+    display: inline-flex;
   }
 
   .softSep {
-    width: 2.5px;
-    height: 2.5px;
-  }
-
-  .galleryButton {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-  }
-
-  .galleryButton svg {
-    width: 14px;
-    height: 14px;
+    display: none;
   }
 
   .headerRight {
@@ -340,7 +467,7 @@
   }
 }
 
-/* Pocket phone — drop bullet seps and slightly shrink brand. Dividers stay. */
+/* Pocket phone — tighten everything; live text shrinks to fit beside brand */
 @media (max-width: 420px) {
   .headerBar {
     padding-left: 8px;
@@ -353,13 +480,11 @@
     margin: 0 6px;
     height: 14px;
   }
-  .headerCenter {
-    gap: 4px;
+  .liveStat {
+    font-size: 11px;
+    gap: 5px;
   }
-  .softSep {
-    display: none;
-  }
-  .artistsToday {
-    font-size: 10.5px;
+  .headerRight {
+    gap: 2px;
   }
 }
