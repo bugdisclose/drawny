@@ -97,6 +97,9 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
         isDraggingRef.current = false;
 
         const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+            if (moveEvent.cancelable) {
+                moveEvent.preventDefault();
+            }
             const moveX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
             const moveY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
             

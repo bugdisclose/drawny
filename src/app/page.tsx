@@ -57,6 +57,14 @@ export default function Home() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUserName(getOrInitializeUsername());
+
+    // Lock page scroll on canvas page to prevent viewport displacement on mobile/keyboard focus
+    document.documentElement.classList.add('canvas-page-body');
+    document.body.classList.add('canvas-page-body');
+    return () => {
+      document.documentElement.classList.remove('canvas-page-body');
+      document.body.classList.remove('canvas-page-body');
+    };
   }, []);
 
 
