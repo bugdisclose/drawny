@@ -70,7 +70,10 @@
   pointer-events: auto;
   animation: nudgeSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   white-space: nowrap;
-  position: relative;
+  position: absolute;
+  right: 70px;
+  top: 50%;
+  transform: translateY(-50%);
   user-select: none;
 }
 
@@ -117,11 +120,11 @@
 @keyframes nudgeSlideIn {
   from {
     opacity: 0;
-    transform: translateX(15px) scale(0.95);
+    transform: translateY(-50%) translateX(15px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateY(-50%) translateX(0) scale(1);
   }
 }
 
@@ -597,6 +600,11 @@
   }
 
   .chatNudgeTooltip {
+    position: absolute;
+    right: 0;
+    bottom: 68px;
+    top: auto;
+    transform: none;
     animation: nudgeSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 

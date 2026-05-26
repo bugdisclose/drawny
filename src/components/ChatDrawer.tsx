@@ -414,7 +414,15 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
                             value={inputVal}
                             onChange={(e) => setInputVal(e.target.value)}
                             onFocus={() => setIsInputFocused(true)}
-                            onBlur={() => setIsInputFocused(false)}
+                            onBlur={() => {
+                                setIsInputFocused(false);
+                                // Force scroll position reset to fix iOS/Safari keyboard dismissal white space bug
+                                setTimeout(() => {
+                                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                                    // Trigger window resize event to force canvas redraw/realign if needed
+                                    window.dispatchEvent(new Event('resize'));
+                                }, 80);
+                            }}
                             placeholder={isConnected ? "Type a message..." : "Connecting..."}
                             maxLength={500}
                             disabled={!isConnected}
