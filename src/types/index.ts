@@ -3,6 +3,18 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 // Re-export common types
 export type { ExcalidrawElement };
 
+export interface ChatMessage {
+  id: string;
+  username: string;
+  message: string;
+  timestamp: number;
+}
+
+export interface ChatHistoryData {
+  messages: ChatMessage[];
+  startTime: number;
+}
+
 // Socket events for real-time communication
 export interface ServerToClientEvents {
   'scene:update': (data: SceneUpdate) => void;
@@ -12,12 +24,16 @@ export interface ServerToClientEvents {
   'cursor:remove': (userId: string) => void;
   'users:count': (count: number) => void;
   'artists:count': (count: number) => void;
+  'chat:message': (message: ChatMessage) => void;
+  'chat:history': (data: ChatHistoryData) => void;
 }
 
 export interface ClientToServerEvents {
   'scene:update': (elements: readonly ExcalidrawElement[]) => void; // Delta or full update
   'scene:request-sync': () => void;
   'cursor:move': (cursor: CursorData) => void;
+  'chat:message': (data: { username: string; message: string }) => void;
+  'chat:request-history': () => void;
 }
 
 export interface SceneUpdate {

@@ -2,11 +2,15 @@ import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { ServerToClientEvents, ClientToServerEvents, CursorData } from '../types';
 import { strokeStorage } from './StrokeStorage';
+import { chatStorage } from './ChatStorage';
 
 let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents> | null = null;
 
 // Track user cursors
 const userCursors = new Map<string, { cursor: CursorData; socketId: string }>();
+
+// Track last chat message timestamp for rate limiting
+const chatRateLimits = new Map<string, number>();
 
 export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
     if (io) {
@@ -50,6 +54,12 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
             artistCount: canvasState.artistCount
         });
 
+        // Send initial chat history immediately on connection
+        socket.emit('chat:history', {
+            messages: chatStorage.getMessages(),
+            startTime: chatStorage.getStartTime()
+        });
+
         // Handle canvas sync request (full sync)
         socket.on('scene:request-sync', () => {
             console.log('[SocketServer] Canvas sync requested by:', socket.id);
@@ -83,8 +93,53 @@ export function attachSocketHandlers(serverIo: SocketIOServer) {
             socket.broadcast.emit('cursor:update', cursor);
         });
 
+        // Handle chat messages
+        socket.on('chat:message', async (data) => {
+            if (!data || typeof data.message !== 'string' || typeof data.username !== 'string') return;
+
+            // 1. Rate Limiting Check (Max 1 message per 1.5 seconds)
+            const now = Date.now();
+            const lastMsgTime = chatRateLimits.get(socket.id) || 0;
+            if (now - lastMsgTime < 1500) {
+                // Send warning only to the spamming client
+                socket.emit('chat:message', {
+                    id: `system-warning-${now}`,
+                    username: 'System',
+                    message: 'You are sending messages too fast. Please wait a moment.',
+                    timestamp: now
+                });
+                return;
+            }
+            chatRateLimits.set(socket.id, now);
+
+            const cleanMessage = data.message.trim();
+            let cleanUsername = data.username.trim() || 'Anonymous';
+
+            // 2. Prevent System identity spoofing
+            if (cleanUsername.toLowerCase() === 'system' || cleanUsername.toLowerCase().startsWith('system-')) {
+                cleanUsername = 'System Spoof';
+            }
+
+            if (cleanMessage.length === 0 || cleanMessage.length > 500) return;
+
+            const savedMsg = await chatStorage.addMessage(cleanUsername, cleanMessage);
+            io?.emit('chat:message', savedMsg);
+        });
+
+        // Handle chat history request (resolves listener race condition)
+        socket.on('chat:request-history', () => {
+            console.log('[SocketServer] Chat history explicitly requested by:', socket.id);
+            socket.emit('chat:history', {
+                messages: chatStorage.getMessages(),
+                startTime: chatStorage.getStartTime()
+            });
+        });
+
         socket.on('disconnect', () => {
             console.log('[SocketServer] Client disconnected:', socket.id);
+
+            // Clean up chat rate limits
+            chatRateLimits.delete(socket.id);
 
             // Remove all cursor entries belonging to this socket
             for (const [userId, data] of userCursors) {
@@ -151,6 +206,27 @@ export async function resetCanvas(): Promise<any> {
     return result;
 }
 
+export async function resetChat(): Promise<any> {
+    console.log('[SocketServer] resetChat triggered. IO available:', !!io);
+
+    try {
+        await chatStorage.reset();
+    } catch (err) {
+        console.error('[SocketServer] Error resetting chat storage:', err);
+        return { success: false, reason: `Chat storage reset failed: ${err}` };
+    }
+
+    if (io) {
+        io.emit('chat:history', {
+            messages: [],
+            startTime: chatStorage.getStartTime()
+        });
+        console.log('[SocketServer] Chat reset broadcast to clients');
+    }
+
+    return { success: true };
+}
+
 // Check for canvas reset and broadcast state
 function setupResetScheduler(): void {
     // Check for reset every minute
@@ -158,6 +234,11 @@ function setupResetScheduler(): void {
         if (strokeStorage.shouldReset()) {
             console.log('[SocketServer] Canvas reset triggered by scheduler');
             resetCanvas().catch(err => console.error('[SocketServer] Error in scheduled reset:', err));
+        }
+
+        if (chatStorage.shouldReset()) {
+            console.log('[SocketServer] Chat reset triggered by scheduler');
+            resetChat().catch(err => console.error('[SocketServer] Error in scheduled chat reset:', err));
         }
     }, 60 * 1000); // Check every minute
 

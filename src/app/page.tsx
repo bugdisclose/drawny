@@ -16,8 +16,8 @@ import InkBar from '@/components/InkBar';
 import StreakBadge from '@/components/StreakBadge';
 import ShareButton from '@/components/ShareButton';
 import ShareNudge from '@/components/ShareNudge';
-import FeedbackButton from '@/components/FeedbackButton';
 import { trackEvent } from '@/lib/analytics';
+import { getOrInitializeUsername } from '@/lib/username';
 import styles from './page.module.css';
 
 // Dynamic import for ExcalidrawCanvas
@@ -29,6 +29,11 @@ const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), 
       <span>Loading canvas...</span>
     </div>
   ),
+});
+
+// Dynamic import for ChatDrawer
+const ChatDrawer = dynamic(() => import('@/components/ChatDrawer'), {
+  ssr: false,
 });
 
 // Import types for dynamic component refs
@@ -45,6 +50,16 @@ export default function Home() {
   // Mobile overflow dropdown (Gallery + Timer + artists-today)
   const [overflowOpen, setOverflowOpen] = useState(false);
   const overflowRef = useRef<HTMLDivElement | null>(null);
+
+  // Username management
+  const [userName, setUserName] = useState<string>('Anonymous');
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUserName(getOrInitializeUsername());
+  }, []);
+
+
 
   // Close overflow on outside click / Escape
   useEffect(() => {
@@ -254,7 +269,6 @@ export default function Home() {
             </svg>
           </Link>
 
-          <FeedbackButton />
           <ShareButton viewport={viewport} onCaptureSnapshot={handleCaptureSnapshot} openRef={openShareRef} />
 
           {/* 3-dot overflow — mobile only */}
@@ -319,6 +333,7 @@ export default function Home() {
         onViewportChange={handleViewportChange}
         snapshotRef={snapshotRef}
         historyRef={historyRef}
+        userName={userName}
       />
 
       <Toolbar
@@ -343,6 +358,12 @@ export default function Home() {
         viewport={viewport}
         usersCount={usersCount}
         onOpenShare={() => openShareRef.current?.()}
+      />
+
+      <ChatDrawer
+        socket={socket}
+        isConnected={isConnected}
+        userName={userName}
       />
     </main>
   );

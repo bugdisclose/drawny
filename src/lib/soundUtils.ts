@@ -138,3 +138,38 @@ export function showInkFullNotification(): void {
     console.warn('[Notification] Failed to show notification:', error);
   }
 }
+
+/**
+ * Play a pleasant chime sound when tagged/mentioned in chat
+ */
+export function playMentionSound(): void {
+  try {
+    const audioContext = getAudioContext();
+    const now = audioContext.currentTime;
+
+    const playTone = (frequency: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+
+    // Rising triple-chime: E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz)
+    playTone(659.25, now, 0.12);
+    playTone(783.99, now + 0.08, 0.12);
+    playTone(1046.50, now + 0.16, 0.25);
+  } catch (error) {
+    console.warn('[Sound] Failed to play mention sound:', error);
+  }
+}

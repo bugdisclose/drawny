@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { ServerToClientEvents, ClientToServerEvents, ExcalidrawElement, SceneUpdate, SceneInitData, CursorData } from '@/types';
+import { ServerToClientEvents, ClientToServerEvents, ExcalidrawElement, SceneUpdate, SceneInitData, CursorData, ChatMessage, ChatHistoryData } from '@/types';
 
 interface Cursor {
     id: string;
@@ -20,6 +20,8 @@ interface UseSocketOptions {
     onUsersCountChange?: (count: number) => void;
     onCursorUpdate?: (cursor: Cursor) => void;
     onCursorRemove?: (userId: string) => void;
+    onChatMessage?: (message: ChatMessage) => void;
+    onChatHistory?: (data: ChatHistoryData) => void;
 }
 
 export function useSocket(options: UseSocketOptions = {}) {
@@ -124,6 +126,14 @@ export function useSocket(options: UseSocketOptions = {}) {
                 optionsRef.current.onCursorRemove?.(userId);
             });
 
+            socketIo.on('chat:message', (msg: ChatMessage) => {
+                optionsRef.current.onChatMessage?.(msg);
+            });
+
+            socketIo.on('chat:history', (data: ChatHistoryData) => {
+                optionsRef.current.onChatHistory?.(data);
+            });
+
             return () => {
                 clearTimeout(fallbackTimer);
                 socketIo.disconnect();
@@ -163,6 +173,12 @@ export function useSocket(options: UseSocketOptions = {}) {
         }
     }, []);
 
+    const sendChatMessage = useCallback((username: string, message: string) => {
+        if (socketRef.current?.connected) {
+            socketRef.current.emit('chat:message', { username, message });
+        }
+    }, []);
+
     return {
         socket,
         isConnected,
@@ -172,6 +188,7 @@ export function useSocket(options: UseSocketOptions = {}) {
         artistCount,
         sendSceneUpdate,
         sendCursorMove,
+        sendChatMessage,
         requestSync,
         reconnect,
     };

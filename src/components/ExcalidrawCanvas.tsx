@@ -58,6 +58,7 @@ interface ExcalidrawCanvasProps {
     onViewportChange?: (viewport: ViewportCoordinates) => void;
     snapshotRef?: MutableRefObject<CaptureSnapshotFn | null>;
     historyRef?: MutableRefObject<HistoryActions | null>;
+    userName: string;
 }
 
 export default function ExcalidrawCanvas({
@@ -69,7 +70,8 @@ export default function ExcalidrawCanvas({
     streakManager,
     onViewportChange,
     snapshotRef,
-    historyRef
+    historyRef,
+    userName
 }: ExcalidrawCanvasProps) {
     const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
     // Ref to access API in socket handlers without stale closures
@@ -485,14 +487,7 @@ export default function ExcalidrawCanvas({
         };
     }, [socket, flushCollaborators]);
 
-    // Random Name Generator
-    const [userName] = useState(() => {
-        const adjectives = ['Happy', 'Creative', 'Swift', 'Bold', 'Mighty', 'Jolly', 'Zany', 'Witty', 'Calm', 'Eager', 'Neon', 'Cosmic'];
-        const animals = ['Panda', 'Fox', 'Tiger', 'Artist', 'Doodler', 'Scribbler', 'Painter', 'Brush', 'Pencil', 'Marker', 'Badger', 'Falcon'];
-        const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const noun = animals[Math.floor(Math.random() * animals.length)];
-        return `${adj} ${noun}`;
-    });
+    // userName is now passed as a prop from the parent component
 
     // Handle local pointer updates — memoized to avoid giving Excalidraw a new
     // function reference on every render (which could trigger internal work).

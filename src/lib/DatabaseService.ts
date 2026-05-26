@@ -81,6 +81,22 @@ class DatabaseService {
                     ALTER TABLE archives ADD COLUMN IF NOT EXISTS artist_count INTEGER DEFAULT 0;
                 `);
 
+                // Create chat_messages table
+                await client.query(`
+                    CREATE TABLE IF NOT EXISTS chat_messages (
+                        id VARCHAR(255) PRIMARY KEY,
+                        username VARCHAR(255) NOT NULL,
+                        message TEXT NOT NULL,
+                        timestamp BIGINT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                `);
+
+                // Create index on timestamp for faster queries
+                await client.query(`
+                    CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp ON chat_messages(timestamp ASC);
+                `);
+
                 console.log('[DatabaseService] ✅ Database tables verified/created');
                 this.isInitialized = true;
             } finally {
@@ -206,6 +222,50 @@ class DatabaseService {
         } catch (err) {
             console.error('[DatabaseService] ❌ Failed to get archives:', err);
             return [];
+        }
+    }
+
+    async saveChatMessage(msg: { id: string; username: string; message: string; timestamp: number }): Promise<boolean> {
+        if (!this.pool || !(await this.ensureInitialized())) return false;
+        try {
+            await this.pool.query(
+                `INSERT INTO chat_messages (id, username, message, timestamp) VALUES ($1, $2, $3, $4)`,
+                [msg.id, msg.username, msg.message, msg.timestamp]
+            );
+            return true;
+        } catch (err) {
+            console.error('[DatabaseService] ❌ Failed to save chat message:', err);
+            return false;
+        }
+    }
+
+    async getChatMessages(sinceTimestamp: number): Promise<Array<{ id: string; username: string; message: string; timestamp: number }>> {
+        if (!this.pool || !(await this.ensureInitialized())) return [];
+        try {
+            const result = await this.pool.query(
+                `SELECT id, username, message, timestamp FROM chat_messages WHERE timestamp >= $1 ORDER BY timestamp ASC`,
+                [sinceTimestamp]
+            );
+            return result.rows.map(row => ({
+                id: row.id,
+                username: row.username,
+                message: row.message,
+                timestamp: Number(row.timestamp),
+            }));
+        } catch (err) {
+            console.error('[DatabaseService] ❌ Failed to get chat messages:', err);
+            return [];
+        }
+    }
+
+    async clearChatMessages(): Promise<boolean> {
+        if (!this.pool || !(await this.ensureInitialized())) return false;
+        try {
+            await this.pool.query(`TRUNCATE TABLE chat_messages`);
+            return true;
+        } catch (err) {
+            console.error('[DatabaseService] ❌ Failed to clear chat messages:', err);
+            return false;
         }
     }
 
