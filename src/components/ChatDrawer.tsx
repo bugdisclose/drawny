@@ -19,6 +19,7 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
     const [unreadCount, setUnreadCount] = useState(0);
     const [hasUnreadTag, setHasUnreadTag] = useState(false);
     const [showTagNudge, setShowTagNudge] = useState(false);
+    const [isInputFocused, setIsInputFocused] = useState(false);
     const [inputVal, setInputVal] = useState('');
     const [chatStartTime, setChatStartTime] = useState<number | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>('12:00:00');
@@ -48,6 +49,7 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
         setHasUnreadTag(false);
         setShowTagNudge(false);
         setShowNudge(false);
+        setIsInputFocused(false);
         setTimeout(() => scrollToBottom('auto'), 50);
     }, [scrollToBottom]);
 
@@ -301,7 +303,7 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
             )}
 
             {/* Chat Panel */}
-            <div className={`${styles.drawerPanel} ${isOpen ? styles.drawerPanelOpen : ''}`}>
+            <div className={`${styles.drawerPanel} ${isOpen ? styles.drawerPanelOpen : ''} ${isInputFocused ? styles.drawerPanelFocused : ''}`}>
                 {/* Header */}
                 <div className={styles.drawerHeader}>
                     <div className={styles.headerInfo}>
@@ -326,7 +328,10 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
                         </a>
                         <button
                             className={styles.closeBtn}
-                            onClick={() => setIsOpen(false)}
+                            onClick={() => {
+                                setIsOpen(false);
+                                setIsInputFocused(false);
+                            }}
                             aria-label="Close Chat"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -408,6 +413,8 @@ export default function ChatDrawer({ socket, isConnected, userName }: ChatDrawer
                             className={styles.chatInput}
                             value={inputVal}
                             onChange={(e) => setInputVal(e.target.value)}
+                            onFocus={() => setIsInputFocused(true)}
+                            onBlur={() => setIsInputFocused(false)}
                             placeholder={isConnected ? "Type a message..." : "Connecting..."}
                             maxLength={500}
                             disabled={!isConnected}
