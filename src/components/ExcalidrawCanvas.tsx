@@ -89,6 +89,12 @@ export default function ExcalidrawCanvas({
     // Flag to prevent infinite loops when updating from socket
     const isRemoteUpdate = useRef(false);
 
+    // Track whether we've auto-enabled pen mode for Apple Pencil / stylus.
+    // Excalidraw automatically sets penDetected=true when it sees pointerType:'pen',
+    // but penMode must be toggled manually (via the hidden PenModeButton).
+    // This ref ensures we enable it once and don't re-check on every pointer event.
+    const autoPenModeEnabled = useRef(false);
+
     // Track element versions for ink consumption
     const elementLengthMap = useRef<Map<string, number>>(new Map());
 
@@ -502,6 +508,35 @@ export default function ExcalidrawCanvas({
         });
     }, [socket, activeColor, userName]);
 
+    // Auto-enable pen mode when Apple Pencil or stylus is detected.
+    // Excalidraw sets penDetected=true on the first pointerdown with pointerType:'pen'.
+    // We defer the check via setTimeout(0) so Excalidraw processes the event first.
+    // Stable callback — empty deps ensures it never changes.
+    const onPointerDown = useCallback(() => {
+        if (autoPenModeEnabled.current) return;
+        const api = excalidrawAPIRef.current;
+        if (!api) return;
+
+        // Defer so Excalidraw has time to set penDetected before we check
+        setTimeout(() => {
+            if (autoPenModeEnabled.current) return;
+            try {
+                const appState = api.getAppState();
+                if (appState.penDetected && !appState.penMode) {
+                    autoPenModeEnabled.current = true;
+                    // preserve current scene elements to avoid data loss
+                    api.updateScene({
+                        elements: api.getSceneElements(),
+                        appState: { penMode: true },
+                    });
+                    console.log('[Excalidraw] Auto-enabled pen mode for stylus/Apple Pencil');
+                }
+            } catch {
+                // ignore — API not ready or internal error
+            }
+        }, 0);
+    }, []);
+
     // Handle local changes — memoized and sends only changed elements (not the full scene).
     const onChange = useCallback((elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
         if (isRemoteUpdate.current) return;
@@ -643,6 +678,7 @@ export default function ExcalidrawCanvas({
                 excalidrawAPI={handleExcalidrawAPI}
                 initialData={initialData}
                 onPointerUpdate={onPointerUpdate}
+                onPointerDown={onPointerDown}
                 onChange={onChange}
                 onScrollChange={onScrollChange}
                 viewModeEnabled={activeTool === 'hand'}
