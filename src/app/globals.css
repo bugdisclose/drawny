@@ -38,15 +38,26 @@ canvas {
   -ms-user-select: none;
 }
 
-/* Ensure Excalidraw container and canvas receive all touch input on iPad */
+/* Ensure Excalidraw container and canvas receive all touch input on iPad.
+ * translateZ(0) forces GPU compositing on Safari — without it, the canvas
+ * may render blank on iPad under certain layout conditions. */
 .excalidraw {
   touch-action: none;
   -webkit-touch-callout: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .excalidraw canvas.interactive {
   touch-action: none !important;
   pointer-events: all !important;
+}
+
+/* Ensure the static (rendering) canvas is visible — it must NOT be
+ * promoted to a separate GPU layer, so keep transform off it. */
+.excalidraw canvas.static {
+  transform: none;
+  -webkit-transform: none;
 }
 
 /* Buttons reset */
@@ -101,13 +112,16 @@ button:focus-visible {
   }
 }
 
-/* Lock html/body scrolling on the canvas drawing page only */
+/* Lock html/body scrolling on the canvas drawing page only.
+ * IMPORTANT: Do NOT use position:fixed on html/body — it breaks
+ * canvas rendering on iPad Safari (GPU compositing quirk).
+ * overflow:hidden + overscroll-behavior:none + touch-action:none
+ * on the canvas are sufficient to prevent unwanted scrolling. */
 html.canvas-page-body,
 body.canvas-page-body {
   height: 100%;
   height: 100dvh;
   overflow: hidden;
-  position: fixed;
   width: 100%;
   overscroll-behavior: none;
 }
