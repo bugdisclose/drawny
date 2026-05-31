@@ -13,7 +13,7 @@ export interface ChatMessage {
 class ChatStorage {
     private messages: ChatMessage[] = [];
     private chatStartTime: number = Date.now();
-    private readonly resetIntervalMs = 12 * 60 * 60 * 1000; // 12 hours
+    private readonly resetIntervalMs = 7 * 24 * 60 * 60 * 1000; // 7 days
     private readonly stateFile = path.join(process.cwd(), '.chat_state.json');
 
     constructor() {
