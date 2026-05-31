@@ -61,18 +61,23 @@ export const COLORS = [
   '#000000', // Black
   '#343a40', // Dark Gray
   '#495057', // Gray
-  '#c92a2a', // Red
+  '#e03131', // Bright Red
+  '#c92a2a', // Crimson
   '#a61e4d', // Pink
+  '#ae3ec9', // Magenta
   '#862e9c', // Grape
   '#5f3dc4', // Violet
   '#364fc7', // Indigo
   '#1864ab', // Blue
+  '#1c7ed6', // Sky Blue
   '#0b7285', // Cyan
   '#087f5b', // Teal
   '#2b8a3e', // Green
   '#5c940d', // Lime
+  '#fab005', // Gold
   '#e67700', // Yellow
   '#d9480f', // Orange
+  '#ffffff', // White
 ] as const;
 
 // Brush sizes mapping to Excalidraw strokeWidth
