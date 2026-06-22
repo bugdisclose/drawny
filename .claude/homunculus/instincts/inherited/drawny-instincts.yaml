@@ -1,0 +1,394 @@
+# Instincts generated from https://github.com/bugdisclose/drawny
+# Generated: 2026-05-31T19:29:56.077Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: drawny-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/bugdisclose/drawny
+---
+
+# Drawny Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: fix
+
+## Evidence
+
+- 1 commits analyzed
+- Detected conventional commit pattern
+- Examples: fix: resolve iPad canvas rendering and drawing, extend chat reset to 7 days
+
+---
+id: drawny-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/bugdisclose/drawny
+---
+
+# Drawny Commit Length
+
+## Action
+
+Write moderate-length commit messages (~75 characters)
+
+## Evidence
+
+- Average commit message length: 75 chars
+- Based on 1 commits
+
+---
+id: drawny-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/bugdisclose/drawny
+---
+
+# Drawny Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: drawny-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/bugdisclose/drawny
+---
+
+# Drawny Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: drawny-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/bugdisclose/drawny
+---
+
+# Drawny Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: app, lib
+
+---
+id: drawny-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/bugdisclose/drawny
+---
+
+# Drawny Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: drawny-instinct-file-naming
+trigger: "When creating a new file in the codebase"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct File Naming
+
+## Action
+
+Name the file using camelCase convention
+
+## Evidence
+
+- Pattern in files Y: namingConventions.files = camelCase
+
+---
+id: drawny-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Function Naming
+
+## Action
+
+Name the function using camelCase convention
+
+## Evidence
+
+- Pattern in files Y: namingConventions.functions = camelCase
+
+---
+id: drawny-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase convention
+
+## Evidence
+
+- Pattern in files Y: namingConventions.classes = PascalCase
+
+---
+id: drawny-instinct-constant-naming
+trigger: "When declaring a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE convention
+
+## Evidence
+
+- Pattern in files Y: namingConventions.constants = SCREAMING_SNAKE_CASE
+
+---
+id: drawny-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Import Style
+
+## Action
+
+Use either default or named imports as appropriate (mixed style)
+
+## Evidence
+
+- Pattern in files Y: importStyle = mixed
+
+---
+id: drawny-instinct-export-style
+trigger: "When exporting modules"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Export Style
+
+## Action
+
+Use either default or named exports as appropriate (mixed style)
+
+## Evidence
+
+- Pattern in files Y: exportStyle = mixed
+
+---
+id: drawny-instinct-commit-format
+trigger: "When making a git commit"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Commit Format
+
+## Action
+
+Format the commit message using the conventional commit style, starting with a prefix such as 'fix:'
+
+## Evidence
+
+- Seen in commit: 'fix: resolve iPad canvas rendering and drawing, extend chat reset to 7 days'
+- Pattern: commits.type = conventional, prefixes = ['fix']
+
+---
+id: drawny-instinct-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Commit Length
+
+## Action
+
+Aim for a commit message length around 75 characters
+
+## Evidence
+
+- Pattern: commits.averageLength = 75
+
+---
+id: drawny-instinct-try-catch-error-handling
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Try Catch Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern: errorHandling.style = try-catch
+
+---
+id: drawny-instinct-no-custom-error-classes
+trigger: "When considering custom error classes"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct No Custom Error Classes
+
+## Action
+
+Avoid creating custom error classes; use standard Error objects
+
+## Evidence
+
+- Pattern: errorHandling.customErrorClasses = false
+
+---
+id: drawny-instinct-no-error-boundaries
+trigger: "When considering error boundaries in code"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct No Error Boundaries
+
+## Action
+
+Do not implement error boundaries
+
+## Evidence
+
+- Pattern: errorHandling.errorBoundaries = false
+
+---
+id: drawny-instinct-no-global-error-handler
+trigger: "When considering a global error handler"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct No Global Error Handler
+
+## Action
+
+Do not implement a global error handler
+
+## Evidence
+
+- Pattern: errorHandling.globalHandler = false
+
+---
+id: drawny-instinct-test-location
+trigger: "When creating new tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Test Location
+
+## Action
+
+Place test files in a separate directory from source code
+
+## Evidence
+
+- Pattern: architecture.folderStructure.testLocation = separate
+
+---
+id: drawny-instinct-src-folder-usage
+trigger: "When adding new source files"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: bugdisclose/drawny
+---
+
+# Drawny Instinct Src Folder Usage
+
+## Action
+
+Place them within the 'src' folder
+
+## Evidence
+
+- Pattern: architecture.folderStructure.commonFolders includes 'src'
+
